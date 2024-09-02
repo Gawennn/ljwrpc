@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="1df1fab2-e1d3-4903-8d03-793a169c8d73" name="Changes" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="customMavenHome" value="$PROJECT_DIR$/../../apache-maven-3.9.6" />
+        <option name="mavenHomeTypeForPersistence" value="CUSTOM" />
+        <option name="userSettingsFile" value="$PROJECT_DIR$/../../apache-maven-3.9.6/conf/settings.xml" />
+      </MavenGeneralSettings>
+    </option>
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 3
+}]]></component>
+  <component name="ProjectId" id="2lSRgOlzqhIWM822gsyk65y950q" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.AppClient.executor": "Run",
+    "Application.AppServer.executor": "Run",
+    "JUnit.NettyTest.testMessage.executor": "Run",
+    "JUnit.NettyTest.testSlice.executor": "Run",
+    "JUnit.ZookeeperTest.executor": "Run",
+    "JUnit.ZookeeperTest.testCreatePNode.executor": "Run",
+    "JUnit.ZookeeperTest.testDeletePNode.executor": "Run",
+    "JUnit.ZookeeperTest.testWatcher.executor": "Run",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "jdk.selected.JAVA_MODULE": "17",
+    "kotlin-language-version-configured": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="com.ljw.netty" />
+    </key>
+  </component>
+  <component name="RunManager" selected="JUnit.ZookeeperTest.testCreatePNode">
+    <configuration name="NettyTest.testMessage" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="ljwrpc-demo" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.ljw.netty.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.ljw" />
+      <option name="MAIN_CLASS_NAME" value="com.ljw.NettyTest" />
+      <option name="METHOD_NAME" value="testMessage" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="ZookeeperTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="ljwrpc-demo" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.ljw.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.ljw" />
+      <option name="MAIN_CLASS_NAME" value="com.ljw.ZookeeperTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="ZookeeperTest.testCreatePNode" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="ljwrpc-demo" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.ljw.netty.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.ljw" />
+      <option name="MAIN_CLASS_NAME" value="com.ljw.ZookeeperTest" />
+      <option name="METHOD_NAME" value="testCreatePNode" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="ZookeeperTest.testDeletePNode" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="ljwrpc-demo" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.ljw.netty.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.ljw" />
+      <option name="MAIN_CLASS_NAME" value="com.ljw.ZookeeperTest" />
+      <option name="METHOD_NAME" value="testDeletePNode" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="ZookeeperTest.testWatcher" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="ljwrpc-demo" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.ljw.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.ljw" />
+      <option name="MAIN_CLASS_NAME" value="com.ljw.ZookeeperTest" />
+      <option name="METHOD_NAME" value="testWatcher" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="JUnit.ZookeeperTest.testCreatePNode" />
+        <item itemvalue="JUnit.ZookeeperTest" />
+        <item itemvalue="JUnit.ZookeeperTest.testWatcher" />
+        <item itemvalue="JUnit.ZookeeperTest.testDeletePNode" />
+        <item itemvalue="JUnit.NettyTest.testMessage" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="1df1fab2-e1d3-4903-8d03-793a169c8d73" name="Changes" comment="" />
+      <created>1725171603513</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1725171603513</updated>
+      <workItem from="1725171604579" duration="19376000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>
