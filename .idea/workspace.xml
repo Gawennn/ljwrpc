@@ -4,7 +4,22 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1df1fab2-e1d3-4903-8d03-793a169c8d73" name="Changes" comment="" />
+    <list default="true" id="1df1fab2-e1d3-4903-8d03-793a169c8d73" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ljwrpc-demo/ljwrpc-api/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ljwrpc-demo/ljwrpc-api/src/main/java/com/ljw/HelloLjwrpc.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ljwrpc-demo/ljwrpc-client-demo/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ljwrpc-demo/ljwrpc-provider-demo/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ljwrpc-demo/ljwrpc-provider-demo/src/main/java/com/ljw/impl/HelloLjwrpcImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ljwrpc-framework/ljwrpc-common/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ljwrpc-framework/ljwrpc-core/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ljwrpc-framework/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ljwrpc-manager/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -13,9 +28,13 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
+        <option value="Interface" />
         <option value="Class" />
       </list>
     </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="MavenImportPreferences">
     <option name="generalSettings">
@@ -30,12 +49,14 @@
   "associatedIndex": 3
 }]]></component>
   <component name="ProjectId" id="2lSRgOlzqhIWM822gsyk65y950q" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "Application.AppClient.executor": "Run",
     "Application.AppServer.executor": "Run",
     "JUnit.NettyTest.testMessage.executor": "Run",
@@ -46,6 +67,8 @@
     "JUnit.ZookeeperTest.testWatcher.executor": "Run",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "master",
     "jdk.selected.JAVA_MODULE": "17",
     "kotlin-language-version-configured": "true",
     "node.js.detected.package.eslint": "true",
@@ -163,11 +186,22 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1725171603513</updated>
-      <workItem from="1725171604579" duration="19376000" />
+      <workItem from="1725171604579" duration="23317000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
 </project>

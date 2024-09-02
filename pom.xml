@@ -10,6 +10,13 @@
     <packaging>pom</packaging>
     <modules>
         <module>ljwrpc-demo</module>
+        <module>ljwrpc-framework</module>
+        <module>ljwrpc-framework/ljwrpc-common</module>
+        <module>ljwrpc-framework/ljwrpc-core</module>
+        <module>ljwrpc-manager</module>
+        <module>ljwrpc-demo/ljwrpc-client-demo</module>
+        <module>ljwrpc-demo/ljwrpc-provider-demo</module>
+        <module>ljwrpc-demo/ljwrpc-api</module>
     </modules>
 
     <properties>
@@ -19,8 +26,13 @@
         <netty.version>4.1.92.Final</netty.version>
         <junit.version>4.12</junit.version>
         <zookeeper.version>3.9.2</zookeeper.version>
+        <commons-lang3.version>3.14.0</commons-lang3.version>
+        <logback-classic.version>1.5.6</logback-classic.version>
+        <fastjson2.verson>2.0.40</fastjson2.verson>
+        <lombok.version>1.18.34</lombok.version>
     </properties>
 
+    <!--父工程版本管理，只做版本管理，不会直接引入到子模块，需要子工程自己引入，只是不需要版本号了-->
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -37,6 +49,28 @@
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
                 <version>${zookeeper.version}</version>
+            </dependency>
+            <!--日志 -->
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback-classic.version}</version>
+            </dependency>
+            <!--fastjson-->
+            <dependency>
+                <groupId>com.alibaba.fastjson2</groupId>
+                <artifactId>fastjson2</artifactId>
+                <version>${fastjson2.verson}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -6,7 +6,14 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="ljwrpc-provider-demo" />
+        <module name="ljwrpc-api" />
+        <module name="ljwrpc-client-demo" />
         <module name="ljwrpc-demo" />
+        <module name="ljwrpc-framework" />
+        <module name="ljwrpc-common" />
+        <module name="ljwrpc-core" />
+        <module name="ljwrpc-manager" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="11" />
