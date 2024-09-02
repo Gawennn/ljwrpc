@@ -1,2 +1,5 @@
 # Project exclude paths
 /ljwrpc-demo/target/
+.idea
+.gitignore
+*.iml
