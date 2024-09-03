@@ -1,11 +1,13 @@
 package com.ljw;
 
 import com.ljw.discovery.RegistryConfig;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author 刘家雯
  * @version 1.0
  */
+@Slf4j
 public class ConsumerApplication {
 
     public static void main(String[] args) {
@@ -27,7 +29,7 @@ public class ConsumerApplication {
 
         // 获取一个代理对象
         HelloLjwrpc helloLjwrpc = reference.get();
-        helloLjwrpc.sayHi("你好");
-
+        String sayHi = helloLjwrpc.sayHi("你好");
+        log.info("sayHi-->{}", sayHi);
     }
 }
