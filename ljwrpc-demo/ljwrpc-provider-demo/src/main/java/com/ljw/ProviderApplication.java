@@ -1,12 +1,13 @@
 package com.ljw;
 
+import com.ljw.discovery.RegistryConfig;
 import com.ljw.impl.HelloLjwrpcImpl;
 
 /**
  * @author 刘家雯
  * @version 1.0
  */
-public class Application {
+public class ProviderApplication {
 
     public static void main(String[] args) {
 
@@ -16,7 +17,6 @@ public class Application {
         ServiceConfig<HelloLjwrpc> service = new ServiceConfig<>();
         service.setInterface(HelloLjwrpc.class);
         service.setRef(new HelloLjwrpcImpl());
-        // 2.定义注册中心
 
         // 2.通过启动引导程序，启动服务提供方
         // （1）配置 -- 应用的名称 -- 注册中心 -- 序列化协议 -- 压缩方式

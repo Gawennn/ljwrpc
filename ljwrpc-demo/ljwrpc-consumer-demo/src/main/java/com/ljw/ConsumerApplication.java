@@ -1,10 +1,12 @@
 package com.ljw;
 
+import com.ljw.discovery.RegistryConfig;
+
 /**
  * @author 刘家雯
  * @version 1.0
  */
-public class Application {
+public class ConsumerApplication {
 
     public static void main(String[] args) {
 
