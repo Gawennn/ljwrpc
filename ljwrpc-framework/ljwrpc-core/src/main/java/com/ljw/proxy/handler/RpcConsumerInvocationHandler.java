@@ -3,9 +3,11 @@ package com.ljw.proxy.handler;
 import com.ljw.LjwrpcBootstrap;
 import com.ljw.NettyBootstrapInitializer;
 import com.ljw.discovery.Registry;
+import com.ljw.enumeration.RequestType;
 import com.ljw.exceptions.DiscoveryException;
 import com.ljw.exceptions.NetworkException;
-import io.netty.buffer.Unpooled;
+import com.ljw.transport.message.LjwrpcRequest;
+import com.ljw.transport.message.RequestPayload;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import lombok.extern.slf4j.Slf4j;
@@ -70,6 +72,21 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
         /*
         -----------------------封装报文----------------------
          */
+        RequestPayload requestPayload = RequestPayload.builder()
+                .interfaceName(interfaceRef.getName())
+                .methodName(method.getName())
+                .parametersType(method.getParameterTypes())
+                .parameterValue(args)
+                .returnType(method.getReturnType())
+                .build();
+
+        LjwrpcRequest ljwrpcRequest = LjwrpcRequest.builder()
+                .requestId(1L)
+                .compressType((byte) 1)
+                .requestType(RequestType.REQUEST.getId())
+                .serializeType((byte) 1)
+                .requestPayload(requestPayload)
+                .build();
 
                 /*
                 ---------------同步策略（会阻塞）----------------
@@ -93,7 +110,9 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
         // 将 completableFuture 暴露出去
         LjwrpcBootstrap.PENDING_REQUEST.put(1L, completableFuture);
 
-        channel.writeAndFlush(Unpooled.copiedBuffer("hello".getBytes())).addListener( (ChannelFutureListener) promise ->{
+        // 这里直接writeAndFlush 写出了一个请求，这个请求的实例就会进入pipeline，执行出站的一系列操作
+        // 我们可以想象的到，第一个出站的程序一定是将ljwRpcRequest请求对象转化成一个二进制的报文
+        channel.writeAndFlush(ljwrpcRequest).addListener( (ChannelFutureListener) promise ->{
             // 当前的promise 将来返回的结果是什么,writeAndFlush的返回结果
             // 一旦数据被写出去，这个promise就结束了
 //                    if (promise.isDone()) {

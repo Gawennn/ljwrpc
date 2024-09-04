@@ -1,5 +1,7 @@
 package com.ljw;
 
+import com.ljw.channelHandler.handler.LjwrpcMessageDecoder;
+import com.ljw.channelHandler.handler.MethodCallHandler;
 import com.ljw.discovery.Registry;
 import com.ljw.discovery.RegistryConfig;
 import io.netty.bootstrap.ServerBootstrap;
@@ -9,6 +11,7 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.logging.LoggingHandler;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetSocketAddress;
@@ -41,7 +44,7 @@ public class LjwrpcBootstrap {
     // 连接的缓存，如果使用InetSocketAddress这样的类作key，一定要看它是否重写了euqals和toString方法
     public final static Map<InetSocketAddress, Channel> CHANNEL_CACHE = new ConcurrentHashMap<>(16);
 
-    // 维护已经发布且暴露的服务列表，key -》 interface 的全限定名 value-》ServiceConfig
+    // 维护已经发布且暴露的服务列表，key -> interface 的全限定名 value-》ServiceConfig
     public final static Map<String, ServiceConfig<?>> SERVERS_LIST = new ConcurrentHashMap<>(16);
 
     // 定义对外全局挂起的 completableFuture
@@ -140,16 +143,10 @@ public class LjwrpcBootstrap {
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
                             // 核心，我们需要添加很多入站和出站的handler
-                            socketChannel.pipeline().addLast(new SimpleChannelInboundHandler<>() {
-                                @Override
-                                protected void channelRead0(ChannelHandlerContext channelHandlerContext, Object msg) throws Exception {
-                                    ByteBuf byteBuf = (ByteBuf) msg;
-                                    log.info("byteBuf-->{}", byteBuf.toString(Charset.defaultCharset()));
-
-                                    // 可以就此不管了，也可以写回去
-                                    channelHandlerContext.writeAndFlush(Unpooled.copiedBuffer("hello---ljwrpc".getBytes()));
-                                }
-                            });
+                            socketChannel.pipeline().addLast(new LoggingHandler())
+                                    .addLast(new LjwrpcMessageDecoder())
+                                    // 根据请求进行方法调用
+                                    .addLast(new MethodCallHandler());
                         }
                     });
             // 4. 绑定端口
