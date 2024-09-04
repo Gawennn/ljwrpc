@@ -6,8 +6,11 @@ import com.ljw.discovery.Registry;
 import com.ljw.enumeration.RequestType;
 import com.ljw.exceptions.DiscoveryException;
 import com.ljw.exceptions.NetworkException;
+import com.ljw.proxy.serialize.Serializer;
+import com.ljw.proxy.serialize.SerializerFactory;
 import com.ljw.transport.message.LjwrpcRequest;
 import com.ljw.transport.message.RequestPayload;
+import com.ljw.utils.IdGenerator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import lombok.extern.slf4j.Slf4j;
@@ -81,10 +84,10 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
                 .build();
 
         LjwrpcRequest ljwrpcRequest = LjwrpcRequest.builder()
-                .requestId(1L)
-                .compressType((byte) 1)
+                .requestId(LjwrpcBootstrap.ID_GENERATOR.getId())
+                .compressType(SerializerFactory.getSerializer(LjwrpcBootstrap.SERIALIZE_TYPE).getCode())
                 .requestType(RequestType.REQUEST.getId())
-                .serializeType((byte) 1)
+                .serializeType(SerializerFactory.getSerializer(LjwrpcBootstrap.SERIALIZE_TYPE).getCode())
                 .requestPayload(requestPayload)
                 .build();
 
@@ -179,5 +182,7 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
             log.error("获取或建立与【{}】的通道时发生了异常", address);
             throw new NetworkException("获取通道时发生了异常");
         }
+
+        return channel;
     }
 }

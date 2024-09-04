@@ -1,19 +1,14 @@
 package com.ljw.channelHandler.handler;
 
-import com.ljw.enumeration.RequestType;
+import com.ljw.LjwrpcBootstrap;
+import com.ljw.proxy.serialize.Serializer;
+import com.ljw.proxy.serialize.SerializerFactory;
 import com.ljw.transport.message.LjwrpcRequest;
 import com.ljw.transport.message.MessageFormatConstant;
-import com.ljw.transport.message.RequestPayload;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import lombok.extern.slf4j.Slf4j;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
 
 /**
  *自定义协议编码器
@@ -45,7 +40,7 @@ import java.nio.charset.StandardCharsets;
  * @version 1.0
  */
 @Slf4j
-public class LjwrpcMessageEncoder extends MessageToByteEncoder<LjwrpcRequest> {
+public class LjwrpcRequestEncoder extends MessageToByteEncoder<LjwrpcRequest> {
 
     @Override
     protected void encode(ChannelHandlerContext channelHandlerContext, LjwrpcRequest ljwrpcRequest, ByteBuf byteBuf) throws Exception {
@@ -77,7 +72,14 @@ public class LjwrpcMessageEncoder extends MessageToByteEncoder<LjwrpcRequest> {
 //        }
 
         // 写入请求体（requestPayload）
-        byte[] body = getBodyBytes(ljwrpcRequest.getRequestPayload());
+        // 1.根据配置的序列化方式进行序列化
+        // 怎么实现 1、工具类 耦合性高 如果以后想替换序列化方式很难
+        Serializer serializer = SerializerFactory.getSerializer(LjwrpcBootstrap.SERIALIZE_TYPE).getSerializer();
+        byte[] body = serializer.serialize(ljwrpcRequest.getRequestPayload());
+
+        // 2.根据配置的压缩方式进行压缩
+
+
         if (body != null) {
             byteBuf.writeBytes(body);
         }
@@ -94,28 +96,10 @@ public class LjwrpcMessageEncoder extends MessageToByteEncoder<LjwrpcRequest> {
 
         //将写指针归位
         byteBuf.writerIndex(writerIndex);
+
+        if (log.isDebugEnabled()) {
+            log.debug("请求【{}】已经完成报文的编码", ljwrpcRequest.getRequestId());
+        }
     }
 
-    private byte[] getBodyBytes(RequestPayload requestPayload) {
-        // 针对不同的消息类型需要做不同的处理，心跳的请求，没有payload
-        if (requestPayload == null) {
-            return null;
-        }
-
-        // 希望可以通过一些设计模式，面向对象的编程，让我们可以配置修改 序列化和压缩 的方式
-        // 对象怎么变成一个字节数组   序列化   压缩
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(baos);
-            objectOutputStream.writeObject(requestPayload);
-
-            // 压缩
-
-            byte[] bytes = baos.toByteArray();
-        } catch (IOException e) {
-            log.error("序列化时出现异常");
-            throw new RuntimeException(e);
-        }
-
-    }
 }

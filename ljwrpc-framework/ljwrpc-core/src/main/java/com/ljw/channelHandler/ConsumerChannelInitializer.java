@@ -1,10 +1,10 @@
 package com.ljw.channelHandler;
 
-import com.ljw.channelHandler.handler.LjwrpcMessageEncoder;
+import com.ljw.channelHandler.handler.LjwrpcRequestEncoder;
+import com.ljw.channelHandler.handler.LjwrpcResponseDecoder;
 import com.ljw.channelHandler.handler.MySimpleChannelInboundHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
@@ -21,7 +21,10 @@ public class ConsumerChannelInitializer extends ChannelInitializer<SocketChannel
                 // netty自带的日志处理器
                 .addLast(new LoggingHandler(LogLevel.DEBUG))
                 // 消息编码器
-                .addLast(new LjwrpcMessageEncoder())
+                .addLast(new LjwrpcRequestEncoder())
+                // 入站的解码器
+                .addLast(new LjwrpcResponseDecoder())
+                // 处理结果
                 .addLast(new MySimpleChannelInboundHandler());
     }
 }

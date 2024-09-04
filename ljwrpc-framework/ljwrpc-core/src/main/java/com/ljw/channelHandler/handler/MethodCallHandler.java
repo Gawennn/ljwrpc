@@ -2,7 +2,9 @@ package com.ljw.channelHandler.handler;
 
 import com.ljw.LjwrpcBootstrap;
 import com.ljw.ServiceConfig;
+import com.ljw.enumeration.ResponseCode;
 import com.ljw.transport.message.LjwrpcRequest;
+import com.ljw.transport.message.LjwrpcResponse;
 import com.ljw.transport.message.RequestPayload;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -24,12 +26,22 @@ public class MethodCallHandler extends SimpleChannelInboundHandler<LjwrpcRequest
         RequestPayload requestPayload = ljwrpcRequest.getRequestPayload();
 
         // 2.根据负载内容进行方法调用
-        Object object = callTargetMethod(requestPayload);
+        Object result = callTargetMethod(requestPayload);
+
+        if (log.isDebugEnabled()) {
+            log.debug("请求【{}】已经在服务端完成方法调用。", ljwrpcRequest.getRequestId());
+        }
 
         // 3.封装响应
+        LjwrpcResponse ljwrpcResponse = new LjwrpcResponse();
+        ljwrpcResponse.setCode(ResponseCode.SUCCESS.getCode());
+        ljwrpcResponse.setRequestId(ljwrpcRequest.getRequestId());
+        ljwrpcResponse.setCompressType(ljwrpcRequest.getCompressType());
+        ljwrpcResponse.setSerializeType(ljwrpcRequest.getSerializeType());
+        ljwrpcResponse.setBody(result);
 
         // 4.写出响应
-        channelHandlerContext.channel().writeAndFlush(object);
+        channelHandlerContext.channel().writeAndFlush(ljwrpcResponse);
     }
 
     private Object callTargetMethod(RequestPayload requestPayload) {
