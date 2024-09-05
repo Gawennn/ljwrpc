@@ -1,19 +1,15 @@
-package com.ljw.channelHandler.handler;
+package com.ljw.channelhandler.handler;
 
-import com.ljw.proxy.serialize.Serializer;
-import com.ljw.proxy.serialize.SerializerFactory;
-import com.ljw.transport.message.LjwrpcRequest;
-import com.ljw.transport.message.LjwrpcResponse;
-import com.ljw.transport.message.MessageFormatConstant;
-import com.ljw.transport.message.RequestPayload;
+import com.ljw.compress.Compressor;
+import com.ljw.compress.CompressorFactory;
+import com.ljw.serialize.Serializer;
+import com.ljw.serialize.SerializerFactory;
+import com.ljw.transport.LjwrpcResponse;
+import com.ljw.transport.MessageFormatConstant;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import lombok.extern.slf4j.Slf4j;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 
 /**
  *自定义协议编码器
@@ -63,13 +59,19 @@ public class LjwrpcResponseEncoder extends MessageToByteEncoder<LjwrpcResponse> 
         byteBuf.writeByte(ljwrpcResponse.getCompressType());
         // 8个字节的请求id
         byteBuf.writeLong(ljwrpcResponse.getRequestId());
+        byteBuf.writeLong(ljwrpcResponse.getTimeStamp());
 
 
-        // 对响应做序列化
-        Serializer serializer = SerializerFactory.getSerializer(ljwrpcResponse.getSerializeType()).getSerializer();
-        byte[] body = serializer.serialize(ljwrpcResponse.getBody());
+        // 1、对响应做序列化
+        byte[] body = null;
+        if (ljwrpcResponse.getBody() != null) {
+            Serializer serializer = SerializerFactory.getSerializer(ljwrpcResponse.getSerializeType()).getSerializer();
+            body = serializer.serialize(ljwrpcResponse.getBody());
 
-        // TODO 压缩
+            // 2、压缩
+            Compressor compressor = CompressorFactory.getCompressor(ljwrpcResponse.getCompressType()).getCompressor();
+            body = compressor.compress(body);
+        }
 
         if (body != null) {
             byteBuf.writeBytes(body);

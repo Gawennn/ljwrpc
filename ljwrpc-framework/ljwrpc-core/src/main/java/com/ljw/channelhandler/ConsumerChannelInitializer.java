@@ -1,8 +1,8 @@
-package com.ljw.channelHandler;
+package com.ljw.channelhandler;
 
-import com.ljw.channelHandler.handler.LjwrpcRequestEncoder;
-import com.ljw.channelHandler.handler.LjwrpcResponseDecoder;
-import com.ljw.channelHandler.handler.MySimpleChannelInboundHandler;
+import com.ljw.channelhandler.handler.LjwrpcRequestEncoder;
+import com.ljw.channelhandler.handler.LjwrpcResponseDecoder;
+import com.ljw.channelhandler.handler.MySimpleChannelInboundHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.logging.LogLevel;

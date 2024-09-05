@@ -1,4 +1,4 @@
-package com.ljw.transport.message;
+package com.ljw.transport;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

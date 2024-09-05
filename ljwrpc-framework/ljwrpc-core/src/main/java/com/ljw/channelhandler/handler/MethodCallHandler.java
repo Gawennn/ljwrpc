@@ -1,11 +1,12 @@
-package com.ljw.channelHandler.handler;
+package com.ljw.channelhandler.handler;
 
 import com.ljw.LjwrpcBootstrap;
 import com.ljw.ServiceConfig;
+import com.ljw.enumeration.RequestType;
 import com.ljw.enumeration.ResponseCode;
-import com.ljw.transport.message.LjwrpcRequest;
-import com.ljw.transport.message.LjwrpcResponse;
-import com.ljw.transport.message.RequestPayload;
+import com.ljw.transport.LjwrpcRequest;
+import com.ljw.transport.LjwrpcResponse;
+import com.ljw.transport.RequestPayload;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.extern.slf4j.Slf4j;
@@ -26,10 +27,12 @@ public class MethodCallHandler extends SimpleChannelInboundHandler<LjwrpcRequest
         RequestPayload requestPayload = ljwrpcRequest.getRequestPayload();
 
         // 2.根据负载内容进行方法调用
-        Object result = callTargetMethod(requestPayload);
-
-        if (log.isDebugEnabled()) {
-            log.debug("请求【{}】已经在服务端完成方法调用。", ljwrpcRequest.getRequestId());
+        Object result = null;
+        if (! (ljwrpcRequest.getRequestType() == RequestType.HEART_BEAT.getId())) {
+            result = callTargetMethod(requestPayload);
+            if (log.isDebugEnabled()) {
+                log.debug("请求【{}】已经在服务端完成方法调用。", ljwrpcRequest.getRequestId());
+            }
         }
 
         // 3.封装响应

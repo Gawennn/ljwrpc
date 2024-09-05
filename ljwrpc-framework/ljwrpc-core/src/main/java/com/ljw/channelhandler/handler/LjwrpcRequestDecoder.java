@@ -1,20 +1,19 @@
-package com.ljw.channelHandler.handler;
+package com.ljw.channelhandler.handler;
 
+import com.ljw.compress.Compressor;
+import com.ljw.compress.CompressorFactory;
 import com.ljw.enumeration.RequestType;
-import com.ljw.proxy.serialize.Serializer;
-import com.ljw.proxy.serialize.SerializerFactory;
-import com.ljw.transport.message.LjwrpcRequest;
-import com.ljw.transport.message.LjwrpcResponse;
-import com.ljw.transport.message.MessageFormatConstant;
-import com.ljw.transport.message.RequestPayload;
+import com.ljw.serialize.Serializer;
+import com.ljw.serialize.SerializerFactory;
+import com.ljw.transport.LjwrpcRequest;
+import com.ljw.transport.MessageFormatConstant;
+import com.ljw.transport.RequestPayload;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
+import java.util.Random;
 
 /**
  * *自定义协议编码器
@@ -44,9 +43,9 @@ import java.io.ObjectInputStream;
  * @version 1.0
  */
 @Slf4j
-public class LjwrpcResponseDecoder extends LengthFieldBasedFrameDecoder {
+public class LjwrpcRequestDecoder extends LengthFieldBasedFrameDecoder {
 
-    public LjwrpcResponseDecoder() {
+    public LjwrpcRequestDecoder() {
         super(
                 // 找到当前报文的总长度，截取报文，截取出来的报文可以去进行解析
                 // 最大帧的长度，超过这个maxFrameLength值会直接丢弃
@@ -64,6 +63,9 @@ public class LjwrpcResponseDecoder extends LengthFieldBasedFrameDecoder {
 
     @Override
     protected Object decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
+
+        Thread.sleep(new Random().nextInt(50));
+
         Object decode = super.decode(ctx, in);
         if (decode instanceof ByteBuf byteBuf) {// 直接将decode强转成了ByteBuf
             return decodeFrame(byteBuf);
@@ -94,8 +96,8 @@ public class LjwrpcResponseDecoder extends LengthFieldBasedFrameDecoder {
         // 4.解析总长度
         int fulllength = byteBuf.readInt();
 
-        // 5.解析请求类型
-        byte responseCode = byteBuf.readByte();
+        // 5.解析请求类型, TODO 判断是不是心跳检测
+        byte requestType = byteBuf.readByte();
 
         // 6.解析序列化类型
         byte serializeType = byteBuf.readByte();
@@ -106,34 +108,42 @@ public class LjwrpcResponseDecoder extends LengthFieldBasedFrameDecoder {
         // 8.解析请求id
         Long requestId = byteBuf.readLong();
 
+        // 9.时间戳
+        long timeStamp = byteBuf.readLong();
+
         // 我们需要封装
-        LjwrpcResponse ljwrpcResponse = new LjwrpcResponse();
-        ljwrpcResponse.setCode(responseCode);
-        ljwrpcResponse.setCompressType(compressType);
-        ljwrpcResponse.setSerializeType(serializeType);
-        ljwrpcResponse.setRequestId(requestId);
+        LjwrpcRequest ljwrpcRequest = new LjwrpcRequest();
+        ljwrpcRequest.setRequestType(requestType);
+        ljwrpcRequest.setCompressType(compressType);
+        ljwrpcRequest.setSerializeType(serializeType);
+        ljwrpcRequest.setRequestId(requestId);
+        ljwrpcRequest.setTimeStamp(timeStamp);
 
         // 心跳请求没有负载，此处可以判断并直接返回
-//        if (requestType == RequestType.HEART_BEAT.getId()) {
-//            return ljwrpcResponse;
-//        }
+        if (requestType == RequestType.HEART_BEAT.getId()) {
+            return ljwrpcRequest;
+        }
 
-        int bodyLength = fulllength - headerLength;
-        byte[] payload = new byte[bodyLength];
+        int payloadLength = fulllength - headerLength;
+        byte[] payload = new byte[payloadLength];
         byteBuf.readBytes(payload);
 
         //有了字节数组之后就可以解压缩反序列化
-        // TODO 解压缩
+        // 1、解压缩
+        if (payload != null && payload.length != 0) {
+            Compressor compressor = CompressorFactory.getCompressor(compressType).getCompressor();
+            payload = compressor.decompress(payload);
 
-        // 反序列化
-        Serializer serializer = SerializerFactory.getSerializer(ljwrpcResponse.getSerializeType()).getSerializer();
-        Object body = serializer.deserialize(payload, Object.class);
-        ljwrpcResponse.setBody(body);
-
-        if (log.isDebugEnabled()) {
-            log.debug("响应【{}】已经在调用端完成解码工作。", ljwrpcResponse.getRequestId());
+            // 2、反序列化
+            Serializer serializer = SerializerFactory.getSerializer(serializeType).getSerializer();
+            RequestPayload requestPayload = serializer.deserialize(payload, RequestPayload.class);
+            ljwrpcRequest.setRequestPayload(requestPayload);
         }
 
-        return ljwrpcResponse;
+        if (log.isDebugEnabled()) {
+            log.debug("请求【{}】已经在服务端完成解码工作。", ljwrpcRequest.getRequestId());
+        }
+
+        return ljwrpcRequest;
     }
 }

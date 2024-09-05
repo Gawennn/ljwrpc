@@ -1,7 +1,10 @@
 package com.ljw;
 
+import com.ljw.core.HeartbeatDetector;
 import com.ljw.discovery.RegistryConfig;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.Map;
 
 /**
  * @author 刘家雯
@@ -26,11 +29,16 @@ public class ConsumerApplication {
                 .application("first-ljwrpc-consumer")
                 .registry(new RegistryConfig("zookeeper://127.0.0.1:2181"))
                 .serialize("hessian")
+                .compress("gzip")
                 .reference(reference);
+
 
         // 获取一个代理对象
         HelloLjwrpc helloLjwrpc = reference.get();
-        String sayHi = helloLjwrpc.sayHi("你好");
-        log.info("sayHi-->{}", sayHi);
+        for (int i = 0; i < 10; i++) {
+            String sayHi = helloLjwrpc.sayHi("你好");
+            log.info("sayHi-->{}", sayHi);
+        }
+
     }
 }

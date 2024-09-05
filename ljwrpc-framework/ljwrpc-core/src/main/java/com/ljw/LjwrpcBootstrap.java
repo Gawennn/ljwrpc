@@ -1,10 +1,16 @@
 package com.ljw;
 
-import com.ljw.channelHandler.handler.LjwrpcRequestDecoder;
-import com.ljw.channelHandler.handler.LjwrpcResponseEncoder;
-import com.ljw.channelHandler.handler.MethodCallHandler;
+import com.ljw.channelhandler.handler.LjwrpcRequestDecoder;
+import com.ljw.channelhandler.handler.LjwrpcResponseEncoder;
+import com.ljw.channelhandler.handler.MethodCallHandler;
+import com.ljw.core.HeartbeatDetector;
 import com.ljw.discovery.Registry;
 import com.ljw.discovery.RegistryConfig;
+import com.ljw.loadbalancer.LoadBalancer;
+import com.ljw.loadbalancer.impl.ConsistentHashBalancer;
+import com.ljw.loadbalancer.impl.MinimumResponseTimeLoadBalancer;
+import com.ljw.loadbalancer.impl.RoundRobinLoadBalancer;
+import com.ljw.transport.LjwrpcRequest;
 import com.ljw.utils.IdGenerator;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -18,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -28,6 +35,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class LjwrpcBootstrap {
 
+
+    public static final int PORT = 8088;
     // LjwrpcBootstrap是一个单例，我们希望每个应用程序只有一个实
     private static LjwrpcBootstrap ljwrpcBootstrap = new LjwrpcBootstrap();
 
@@ -35,15 +44,19 @@ public class LjwrpcBootstrap {
     private String appName = "default";
     private RegistryConfig registryConfig;
     private ProtocolConfig protocolConfig;
-    private int port = 8088;
     public static final IdGenerator ID_GENERATOR = new IdGenerator(1,2);
     public static String SERIALIZE_TYPE = "jdk";
+    public static String COMPRESS_TYPE = "gzip";
+
+    public static final ThreadLocal<LjwrpcRequest> REQUEST_THREAD_LOCAL = new ThreadLocal<>();
 
     // 注册中心
     private Registry registry;
+    public static LoadBalancer LOAD_BALANCER;
 
     // 连接的缓存，如果使用InetSocketAddress这样的类作key，一定要看它是否重写了euqals和toString方法
     public final static Map<InetSocketAddress, Channel> CHANNEL_CACHE = new ConcurrentHashMap<>(16);
+    public final static TreeMap<Long, Channel> ANSWER_TIME_CHANNEL_CACHE = new TreeMap<>();
 
     // 维护已经发布且暴露的服务列表，key -> interface 的全限定名 value-》ServiceConfig
     public final static Map<String, ServiceConfig<?>> SERVERS_LIST = new ConcurrentHashMap<>(16);
@@ -83,6 +96,8 @@ public class LjwrpcBootstrap {
 
         // 尝试使用 registryConfig 获取一个注册中心，有点工厂设计模式的意思
         this.registry = registryConfig.getRegistry();
+        // TODO 需要修改
+        LjwrpcBootstrap.LOAD_BALANCER = new MinimumResponseTimeLoadBalancer();
         return this;
     }
 
@@ -152,7 +167,8 @@ public class LjwrpcBootstrap {
                         }
                     });
             // 4. 绑定端口
-            ChannelFuture channelFuture = serverBootstrap.bind(port).sync();
+            ChannelFuture channelFuture = serverBootstrap.bind(PORT).sync();
+
             channelFuture.channel().closeFuture().sync();
         } catch (InterruptedException e){
             e.printStackTrace();
@@ -172,6 +188,9 @@ public class LjwrpcBootstrap {
 
     public LjwrpcBootstrap reference(ReferenceConfig<?> reference) {
 
+        // 开启对这个服务的心跳检测
+        HeartbeatDetector.detectHeartbeat(reference.getInterfaceRef().getName());
+
         // 在这个方法里我们是否可以拿到相关的配置项-注册中心
         // 配置reference，将来调用get方法时，方便生成代理对象
         // 1.reference需要一个注册中心
@@ -190,5 +209,17 @@ public class LjwrpcBootstrap {
             log.debug("我们配置了使用的序列化的方式为【{}】", serializeType);
         }
         return this;
+    }
+
+    public LjwrpcBootstrap compress(String compressType) {
+        COMPRESS_TYPE = compressType;
+        if (log.isDebugEnabled()){
+            log.debug("我们配置了使用的压缩算法为为【{}】", compressType);
+        }
+        return this;
+    }
+
+    public Registry getRegistry() {
+        return registry;
     }
 }

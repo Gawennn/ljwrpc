@@ -1,10 +1,11 @@
-package com.ljw.channelHandler.handler;
+package com.ljw.channelhandler.handler;
 
-import com.ljw.LjwrpcBootstrap;
-import com.ljw.proxy.serialize.Serializer;
-import com.ljw.proxy.serialize.SerializerFactory;
-import com.ljw.transport.message.LjwrpcRequest;
-import com.ljw.transport.message.MessageFormatConstant;
+import com.ljw.compress.Compressor;
+import com.ljw.compress.CompressorFactory;
+import com.ljw.serialize.Serializer;
+import com.ljw.serialize.SerializerFactory;
+import com.ljw.transport.LjwrpcRequest;
+import com.ljw.transport.MessageFormatConstant;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
@@ -58,6 +59,7 @@ public class LjwrpcRequestEncoder extends MessageToByteEncoder<LjwrpcRequest> {
         byteBuf.writeByte(ljwrpcRequest.getCompressType());
         // 8个字节的请求id
         byteBuf.writeLong(ljwrpcRequest.getRequestId());
+        byteBuf.writeLong(ljwrpcRequest.getTimeStamp());
 
         // 如果是心跳请求，就不处理请求体
 //        if (ljwrpcRequest.getRequestType() == RequestType.HEART_BEAT.getId()) {
@@ -74,11 +76,15 @@ public class LjwrpcRequestEncoder extends MessageToByteEncoder<LjwrpcRequest> {
         // 写入请求体（requestPayload）
         // 1.根据配置的序列化方式进行序列化
         // 怎么实现 1、工具类 耦合性高 如果以后想替换序列化方式很难
-        Serializer serializer = SerializerFactory.getSerializer(LjwrpcBootstrap.SERIALIZE_TYPE).getSerializer();
-        byte[] body = serializer.serialize(ljwrpcRequest.getRequestPayload());
+        byte[] body = null;
+        if (ljwrpcRequest.getRequestPayload() != null) {
+            Serializer serializer = SerializerFactory.getSerializer(ljwrpcRequest.getSerializeType()).getSerializer();
+            body = serializer.serialize(ljwrpcRequest.getRequestPayload());
 
         // 2.根据配置的压缩方式进行压缩
-
+            Compressor compressor = CompressorFactory.getCompressor(ljwrpcRequest.getCompressType()).getCompressor();
+            body = compressor.compress(body);
+        }
 
         if (body != null) {
             byteBuf.writeBytes(body);

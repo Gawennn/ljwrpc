@@ -2,15 +2,14 @@ package com.ljw.proxy.handler;
 
 import com.ljw.LjwrpcBootstrap;
 import com.ljw.NettyBootstrapInitializer;
+import com.ljw.compress.CompressorFactory;
 import com.ljw.discovery.Registry;
 import com.ljw.enumeration.RequestType;
 import com.ljw.exceptions.DiscoveryException;
 import com.ljw.exceptions.NetworkException;
-import com.ljw.proxy.serialize.Serializer;
-import com.ljw.proxy.serialize.SerializerFactory;
-import com.ljw.transport.message.LjwrpcRequest;
-import com.ljw.transport.message.RequestPayload;
-import com.ljw.utils.IdGenerator;
+import com.ljw.serialize.SerializerFactory;
+import com.ljw.transport.LjwrpcRequest;
+import com.ljw.transport.RequestPayload;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.util.Date;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -47,14 +47,35 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        // 我们调用sayHi方法，事实上会走进这个代码段中
-        // 我们已经知道 method args
-//        log.info("method-->{}", method.getName());
-//        log.info("args-->{}", args);
 
-        // 1. 发现服务，从注册中心寻找一个可用的服务
+        /*
+        -----------------------封装报文----------------------
+         */
+        RequestPayload requestPayload = RequestPayload.builder()
+                .interfaceName(interfaceRef.getName())
+                .methodName(method.getName())
+                .parametersType(method.getParameterTypes())
+                .parameterValue(args)
+                .returnType(method.getReturnType())
+                .build();
+
+        // 创建一个请求
+        LjwrpcRequest ljwrpcRequest = LjwrpcRequest.builder()
+                .requestId(LjwrpcBootstrap.ID_GENERATOR.getId())
+                .compressType(CompressorFactory.getCompressor(LjwrpcBootstrap.COMPRESS_TYPE).getCode())
+                .requestType(RequestType.REQUEST.getId())
+                .serializeType(SerializerFactory.getSerializer(LjwrpcBootstrap.SERIALIZE_TYPE).getCode())
+                .timeStamp(new Date().getTime())
+                .requestPayload(requestPayload)
+                .build();
+
+        // 将请求存入本地线程，需要在合适的时候remove
+        LjwrpcBootstrap.REQUEST_THREAD_LOCAL.set(ljwrpcRequest);
+
+
+        // 2、发现服务，从注册中心拉取服务列表，并通过客户端负载均衡寻找一个可用的服务
         // 传入服务的名字，返回ip+端口
-        InetSocketAddress address = registry.lookup(interfaceRef.getName());
+        InetSocketAddress address = LjwrpcBootstrap.LOAD_BALANCER.selectServiceAddress(interfaceRef.getName());
         if (log.isDebugEnabled()){
             log.debug("服务调用方,发现了服务【{}】的可用主机【{}】", interfaceRef.getName(), address);
         }
@@ -71,25 +92,6 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
             log.debug("获取了和【{}】建立的连接通道，准备发送数据", address);
         }
 
-
-        /*
-        -----------------------封装报文----------------------
-         */
-        RequestPayload requestPayload = RequestPayload.builder()
-                .interfaceName(interfaceRef.getName())
-                .methodName(method.getName())
-                .parametersType(method.getParameterTypes())
-                .parameterValue(args)
-                .returnType(method.getReturnType())
-                .build();
-
-        LjwrpcRequest ljwrpcRequest = LjwrpcRequest.builder()
-                .requestId(LjwrpcBootstrap.ID_GENERATOR.getId())
-                .compressType(SerializerFactory.getSerializer(LjwrpcBootstrap.SERIALIZE_TYPE).getCode())
-                .requestType(RequestType.REQUEST.getId())
-                .serializeType(SerializerFactory.getSerializer(LjwrpcBootstrap.SERIALIZE_TYPE).getCode())
-                .requestPayload(requestPayload)
-                .build();
 
                 /*
                 ---------------同步策略（会阻塞）----------------
@@ -111,7 +113,7 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
         // 4.写出报文
         CompletableFuture<Object> completableFuture = new CompletableFuture<>();
         // 将 completableFuture 暴露出去
-        LjwrpcBootstrap.PENDING_REQUEST.put(1L, completableFuture);
+        LjwrpcBootstrap.PENDING_REQUEST.put(ljwrpcRequest.getRequestId(), completableFuture);
 
         // 这里直接writeAndFlush 写出了一个请求，这个请求的实例就会进入pipeline，执行出站的一系列操作
         // 我们可以想象的到，第一个出站的程序一定是将ljwRpcRequest请求对象转化成一个二进制的报文
@@ -127,6 +129,9 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
                 completableFuture.completeExceptionally(promise.cause());
             }
         });
+
+        // 清理ThreadLocal
+        LjwrpcBootstrap.REQUEST_THREAD_LOCAL.remove();
 
         // 如果没有地方处理这个completableFuture，这里会阻塞，等待complete方法的执行
         // q：我们需要在哪里调用complete方法得到结果？ 很明显，pipeline中最终的 handler 的处理结果

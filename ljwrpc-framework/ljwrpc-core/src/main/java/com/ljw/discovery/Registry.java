@@ -3,6 +3,7 @@ package com.ljw.discovery;
 import com.ljw.ServiceConfig;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 
 /**
  * 思考：注册中心应该具有什么样的能力
@@ -19,9 +20,9 @@ public interface Registry {
     void registry(ServiceConfig<?> serviceConfig);
 
     /**
-     * 从注册中心拉取一个可用的服务
+     * 从注册中心拉取服务列表
      * @param servicename 服务的名称
      * @return 服务的地址
      */
-    InetSocketAddress lookup(String servicename);
+    List<InetSocketAddress> lookup(String servicename);
 }

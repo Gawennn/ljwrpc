@@ -1,4 +1,4 @@
-package com.ljw.transport.message;
+package com.ljw.transport;
 
 import java.nio.charset.StandardCharsets;
 
@@ -23,7 +23,7 @@ public class MessageFormatConstant {
     public final static byte[] MAGIC = "ljwrpc".getBytes();
     public final static byte VERSION = 1;
     // 头部信息的长度
-    public final static short HEADER_LENGTH = (byte)(MAGIC.length + 1 + 2 + 4 + 1 + 1 + 1 + 8);
+    public final static short HEADER_LENGTH = (byte)(MAGIC.length + 1 + 2 + 4 + 1 + 1 + 1 + 8 + 8);
 
     public final static int MAX_FRAME_LENGTH = 1024 * 1024;
 

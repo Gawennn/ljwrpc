@@ -1,4 +1,4 @@
-package com.ljw.proxy.serialize;
+package com.ljw.serialize;
 
 /**
  * 序列化器

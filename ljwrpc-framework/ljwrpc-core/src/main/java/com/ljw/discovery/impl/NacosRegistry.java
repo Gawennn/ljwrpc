@@ -11,6 +11,7 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooKeeper;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 
 /**
  * @author 刘家雯
@@ -57,7 +58,7 @@ public class NacosRegistry extends AbstractRegistry {
     }
 
     @Override
-    public InetSocketAddress lookup(String servicename) {
+    public List<InetSocketAddress> lookup(String servicename) {
 
         return null;
     }

@@ -1,4 +1,4 @@
-package com.ljw.transport.message;
+package com.ljw.transport;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,7 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 服务提供方回复的响应
+ * 服务调用方发起的请求内容
  *
  * @author 刘家雯
  * @version 1.0
@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class LjwrpcResponse {
+public class LjwrpcRequest {
 
     // 请求的id
     private Long requestId;
@@ -29,9 +29,9 @@ public class LjwrpcResponse {
     // 序列化的方式
     private byte serializeType;
 
-    // 响应码类型 1 成功, 2 异常
-    private byte code;
+    // 时间戳
+    private long timeStamp;
 
     // 具体的消息体
-    private Object body;
+    private RequestPayload requestPayload;
 }

@@ -1,8 +1,8 @@
-package com.ljw.proxy.serialize.impl;
+package com.ljw.serialize.impl;
 
 import com.alibaba.fastjson2.JSON;
-import com.ljw.proxy.serialize.Serializer;
-import com.ljw.transport.message.RequestPayload;
+import com.ljw.serialize.Serializer;
+import com.ljw.transport.RequestPayload;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;

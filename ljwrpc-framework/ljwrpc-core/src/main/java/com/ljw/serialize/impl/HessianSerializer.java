@@ -1,9 +1,9 @@
-package com.ljw.proxy.serialize.impl;
+package com.ljw.serialize.impl;
 
 import com.caucho.hessian.io.Hessian2Input;
 import com.caucho.hessian.io.Hessian2Output;
 import com.ljw.exceptions.SerializeException;
-import com.ljw.proxy.serialize.Serializer;
+import com.ljw.serialize.Serializer;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;

@@ -1,4 +1,4 @@
-package com.ljw.proxy.serialize;
+package com.ljw.serialize;
 
 import lombok.extern.slf4j.Slf4j;
 
