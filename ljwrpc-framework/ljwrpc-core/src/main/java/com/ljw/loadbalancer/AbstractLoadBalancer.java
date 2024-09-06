@@ -28,7 +28,7 @@ public abstract class AbstractLoadBalancer implements LoadBalancer{
         // 2、如果没有，就需要为这个service创建一个selector
         if (selector == null) {
             // 对于这个负载均衡器，内部应该维护服务列表作为缓存
-            List<InetSocketAddress> serviceList = LjwrpcBootstrap.getInstance().getRegistry().lookup(serviceName);
+            List<InetSocketAddress> serviceList = LjwrpcBootstrap.getInstance().getConfiguration().getRegistryConfig().getRegistry().lookup(serviceName);
 
             // 提供一些算法负责选取合适的节点
             selector = getSelector(serviceList);
@@ -39,6 +39,12 @@ public abstract class AbstractLoadBalancer implements LoadBalancer{
 
         // 获取可用节点
         return selector.getNext();
+    }
+
+    @Override
+    public synchronized void reLoadBalance(String serviceName, List<InetSocketAddress> addresses) {
+        // 我们可以根据新的服务列表生成新的selector
+        cache.put(serviceName, getSelector(addresses));
     }
 
     /**

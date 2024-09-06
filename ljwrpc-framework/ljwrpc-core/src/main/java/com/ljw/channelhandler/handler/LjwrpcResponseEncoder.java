@@ -65,11 +65,11 @@ public class LjwrpcResponseEncoder extends MessageToByteEncoder<LjwrpcResponse> 
         // 1、对响应做序列化
         byte[] body = null;
         if (ljwrpcResponse.getBody() != null) {
-            Serializer serializer = SerializerFactory.getSerializer(ljwrpcResponse.getSerializeType()).getSerializer();
+            Serializer serializer = SerializerFactory.getSerializer(ljwrpcResponse.getSerializeType()).getImpl();
             body = serializer.serialize(ljwrpcResponse.getBody());
 
             // 2、压缩
-            Compressor compressor = CompressorFactory.getCompressor(ljwrpcResponse.getCompressType()).getCompressor();
+            Compressor compressor = CompressorFactory.getCompressor(ljwrpcResponse.getCompressType()).getImpl();
             body = compressor.compress(body);
         }
 

@@ -126,11 +126,11 @@ public class LjwrpcResponseDecoder extends LengthFieldBasedFrameDecoder {
         if (payload != null && payload.length > 0) {
             // 有了字节数组之后就可以解压缩反序列化
             // 1、解压缩
-            Compressor compressor = CompressorFactory.getCompressor(compressType).getCompressor();
+            Compressor compressor = CompressorFactory.getCompressor(compressType).getImpl();
             payload = compressor.decompress(payload);
 
             // 2、反序列化
-            Serializer serializer = SerializerFactory.getSerializer(ljwrpcResponse.getSerializeType()).getSerializer();
+            Serializer serializer = SerializerFactory.getSerializer(ljwrpcResponse.getSerializeType()).getImpl();
             Object body = serializer.deserialize(payload, Object.class);
             ljwrpcResponse.setBody(body);
         }

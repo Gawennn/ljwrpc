@@ -1,6 +1,7 @@
 package com.ljw.impl;
 
 import com.ljw.HelloLjwrpc;
+import com.ljw.HelloLjwrpc2;
 import com.ljw.annotation.LjwrpcApi;
 
 /**
@@ -8,7 +9,7 @@ import com.ljw.annotation.LjwrpcApi;
  * @version 1.0
  */
 @LjwrpcApi
-public class HelloLjwrpcImpl implements HelloLjwrpc {
+public class HelloLjwrpcImpl2 implements HelloLjwrpc2 {
 
     @Override
     public String sayHi(String msg) {

@@ -25,10 +25,12 @@ public class ProviderApplication {
                 .application("first-ljwrpc-provider")
                 // 配置注册中心
                 .registry(new RegistryConfig("zookeeper://127.0.0.1:2181"))
-                // 配置协议
-                .protocol(new ProtocolConfig("jdk"))
+                .serialize("jdk")
                 // 发布服务
-                .publish(service)
+                //.publish(service)
+                // 扫包批量发布
+                .scan("com.ljw")
+                // 启动服务
                 .start();
     }
 }

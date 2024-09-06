@@ -2,6 +2,7 @@ package com.ljw.proxy.handler;
 
 import com.ljw.LjwrpcBootstrap;
 import com.ljw.NettyBootstrapInitializer;
+import com.ljw.annotation.TryTimes;
 import com.ljw.compress.CompressorFactory;
 import com.ljw.discovery.Registry;
 import com.ljw.enumeration.RequestType;
@@ -45,52 +46,86 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
         this.interfaceRef = interfaceRef;
     }
 
+    /**
+     * 所有的方法调用，本质都会走到这里
+     * @param proxy the proxy instance that the method was invoked on
+     *
+     * @param method the {@code Method} instance corresponding to
+     * the interface method invoked on the proxy instance.  The declaring
+     * class of the {@code Method} object will be the interface that
+     * the method was declared in, which may be a superinterface of the
+     * proxy interface that the proxy class inherits the method through.
+     *
+     * @param args an array of objects containing the values of the
+     * arguments passed in the method invocation on the proxy instance,
+     * or {@code null} if interface method takes no arguments.
+     * Arguments of primitive types are wrapped in instances of the
+     * appropriate primitive wrapper class, such as
+     * {@code java.lang.Integer} or {@code java.lang.Boolean}.
+     *
+     * @return 返回值
+     * @throws Throwable
+     */
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
+        // 从接口中获取判断是否需要重试
+        TryTimes tryTimesAnnotation = method.getAnnotation(TryTimes.class);
+
+        // 默认值0，代表不重试
+        int tryTimes = 0;
+        int intervalTime = 0;
+        if (tryTimesAnnotation != null) {
+            tryTimes = tryTimesAnnotation.tryTimes();
+            intervalTime = 2000;
+        }
+
+        while (true) {
+            // 什么情况下需要重试 1.异常 2.响应有问题 code==500
+            try {
         /*
         -----------------------封装报文----------------------
          */
-        RequestPayload requestPayload = RequestPayload.builder()
-                .interfaceName(interfaceRef.getName())
-                .methodName(method.getName())
-                .parametersType(method.getParameterTypes())
-                .parameterValue(args)
-                .returnType(method.getReturnType())
-                .build();
+                RequestPayload requestPayload = RequestPayload.builder()
+                        .interfaceName(interfaceRef.getName())
+                        .methodName(method.getName())
+                        .parametersType(method.getParameterTypes())
+                        .parameterValue(args)
+                        .returnType(method.getReturnType())
+                        .build();
 
-        // 创建一个请求
-        LjwrpcRequest ljwrpcRequest = LjwrpcRequest.builder()
-                .requestId(LjwrpcBootstrap.ID_GENERATOR.getId())
-                .compressType(CompressorFactory.getCompressor(LjwrpcBootstrap.COMPRESS_TYPE).getCode())
-                .requestType(RequestType.REQUEST.getId())
-                .serializeType(SerializerFactory.getSerializer(LjwrpcBootstrap.SERIALIZE_TYPE).getCode())
-                .timeStamp(new Date().getTime())
-                .requestPayload(requestPayload)
-                .build();
+                // 创建一个请求
+                LjwrpcRequest ljwrpcRequest = LjwrpcRequest.builder()
+                        .requestId(LjwrpcBootstrap.getInstance().getConfiguration().getIdGenerator().getId())
+                        .compressType(CompressorFactory.getCompressor(LjwrpcBootstrap.getInstance().getConfiguration().getCompressType()).getCode())
+                        .requestType(RequestType.REQUEST.getId())
+                        .serializeType(SerializerFactory.getSerializer(LjwrpcBootstrap.getInstance().getConfiguration().getSerializeType()).getCode())
+                        .timeStamp(System.currentTimeMillis())
+                        .requestPayload(requestPayload)
+                        .build();
 
-        // 将请求存入本地线程，需要在合适的时候remove
-        LjwrpcBootstrap.REQUEST_THREAD_LOCAL.set(ljwrpcRequest);
+                // 将请求存入本地线程，需要在合适的时候remove
+                LjwrpcBootstrap.REQUEST_THREAD_LOCAL.set(ljwrpcRequest);
 
 
-        // 2、发现服务，从注册中心拉取服务列表，并通过客户端负载均衡寻找一个可用的服务
-        // 传入服务的名字，返回ip+端口
-        InetSocketAddress address = LjwrpcBootstrap.LOAD_BALANCER.selectServiceAddress(interfaceRef.getName());
-        if (log.isDebugEnabled()){
-            log.debug("服务调用方,发现了服务【{}】的可用主机【{}】", interfaceRef.getName(), address);
-        }
+                // 2、发现服务，从注册中心拉取服务列表，并通过客户端负载均衡寻找一个可用的服务
+                // 传入服务的名字，返回ip+端口
+                InetSocketAddress address = LjwrpcBootstrap.getInstance().getConfiguration().getLoadBalancer().selectServiceAddress(interfaceRef.getName());
+                if (log.isDebugEnabled()) {
+                    log.debug("服务调用方,发现了服务【{}】的可用主机【{}】", interfaceRef.getName(), address);
+                }
 
-        // 2.使用netty连接服务器，发送 调用的 服务的名字+方法名字+参数列表 得到结果
-        // 定义线程池，EventLoopGroup
-        // 整个连接过程放在这里行不行，也就意味着每个调用都要产生一个新的netty连接。如何缓存我们的连接，
-        // 也就意味着每次在此处建立一个新的连接是不合适的
+                // 2.使用netty连接服务器，发送 调用的 服务的名字+方法名字+参数列表 得到结果
+                // 定义线程池，EventLoopGroup
+                // 整个连接过程放在这里行不行，也就意味着每个调用都要产生一个新的netty连接。如何缓存我们的连接，
+                // 也就意味着每次在此处建立一个新的连接是不合适的
 
-        // 解决方案？缓存channel。尝试从缓存中获取channel。如果未获取，创建新的连接并获取
-        // 2.尝试获取一个可用通道
-        Channel channel = getAvailableChannel(address);
-        if (log.isDebugEnabled()){
-            log.debug("获取了和【{}】建立的连接通道，准备发送数据", address);
-        }
+                // 解决方案？缓存channel。尝试从缓存中获取channel。如果未获取，创建新的连接并获取
+                // 2.尝试获取一个可用通道
+                Channel channel = getAvailableChannel(address);
+                if (log.isDebugEnabled()) {
+                    log.debug("获取了和【{}】建立的连接通道，准备发送数据", address);
+                }
 
 
                 /*
@@ -110,33 +145,49 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
                 ---------------异步策略（不会阻塞）----------------
                  */
 
-        // 4.写出报文
-        CompletableFuture<Object> completableFuture = new CompletableFuture<>();
-        // 将 completableFuture 暴露出去
-        LjwrpcBootstrap.PENDING_REQUEST.put(ljwrpcRequest.getRequestId(), completableFuture);
+                // 4.写出报文
+                CompletableFuture<Object> completableFuture = new CompletableFuture<>();
+                // 将 completableFuture 暴露出去
+                LjwrpcBootstrap.PENDING_REQUEST.put(ljwrpcRequest.getRequestId(), completableFuture);
 
-        // 这里直接writeAndFlush 写出了一个请求，这个请求的实例就会进入pipeline，执行出站的一系列操作
-        // 我们可以想象的到，第一个出站的程序一定是将ljwRpcRequest请求对象转化成一个二进制的报文
-        channel.writeAndFlush(ljwrpcRequest).addListener( (ChannelFutureListener) promise ->{
-            // 当前的promise 将来返回的结果是什么,writeAndFlush的返回结果
-            // 一旦数据被写出去，这个promise就结束了
+                // 这里直接writeAndFlush 写出了一个请求，这个请求的实例就会进入pipeline，执行出站的一系列操作
+                // 我们可以想象的到，第一个出站的程序一定是将ljwRpcRequest请求对象转化成一个二进制的报文
+                channel.writeAndFlush(ljwrpcRequest).addListener((ChannelFutureListener) promise -> {
+                    // 当前的promise 将来返回的结果是什么,writeAndFlush的返回结果
+                    // 一旦数据被写出去，这个promise就结束了
 //                    if (promise.isDone()) {
 //                        completableFuture.complete(promise.getNow());
 //                    }
 
-            // 只需要处理以下异常就可以了
-            if (!promise.isSuccess()) {
-                completableFuture.completeExceptionally(promise.cause());
+                    // 只需要处理以下异常就可以了
+                    if (!promise.isSuccess()) {
+                        completableFuture.completeExceptionally(promise.cause());
+                    }
+                });
+
+                // 清理ThreadLocal
+                LjwrpcBootstrap.REQUEST_THREAD_LOCAL.remove();
+
+                // 如果没有地方处理这个completableFuture，这里会阻塞，等待complete方法的执行
+                // q：我们需要在哪里调用complete方法得到结果？ 很明显，pipeline中最终的 handler 的处理结果
+                // 5.获取响应的结果
+                return completableFuture.get(10, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                // 次数减一，并且等待固定时间，固定时间有一定的问题，容易重试风暴
+                tryTimes--;
+                try {
+                    Thread.sleep(intervalTime);
+                } catch (InterruptedException ex){
+                    log.error("在进行重试时发生异常", ex);
+                }
+                if (tryTimes < 0){
+                    log.error("对方法【{}】进行远程调用时，重试{}次，依然不可调用", method.getName(), tryTimes, e);
+                    break;
+                }
+                log.error("在进行第{}次重试时发生异常", 3-tryTimes, e);
             }
-        });
-
-        // 清理ThreadLocal
-        LjwrpcBootstrap.REQUEST_THREAD_LOCAL.remove();
-
-        // 如果没有地方处理这个completableFuture，这里会阻塞，等待complete方法的执行
-        // q：我们需要在哪里调用complete方法得到结果？ 很明显，pipeline中最终的 handler 的处理结果
-        // 5.获取响应的结果
-        return completableFuture.get(3, TimeUnit.SECONDS);
+        }
+        throw new RuntimeException("执行远程方法" + method.getName() + "调用失败。");
     }
 
     /**

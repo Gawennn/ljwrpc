@@ -32,12 +32,20 @@ public class ConsumerApplication {
                 .compress("gzip")
                 .reference(reference);
 
+        while (true) {
+            try {
+                Thread.sleep(10000);
+                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
 
-        // 获取一个代理对象
-        HelloLjwrpc helloLjwrpc = reference.get();
-        for (int i = 0; i < 10; i++) {
-            String sayHi = helloLjwrpc.sayHi("你好");
-            log.info("sayHi-->{}", sayHi);
+            // 获取一个代理对象
+            HelloLjwrpc helloLjwrpc = reference.get();
+            for (int i = 0; i < 5; i++) {
+                String sayHi = helloLjwrpc.sayHi("你好");
+                log.info("sayHi-->{}", sayHi);
+            }
         }
 
     }

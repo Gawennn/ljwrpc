@@ -9,8 +9,11 @@ import com.ljw.exceptions.NetworkException;
 import com.ljw.utils.NetUtils;
 import com.ljw.utils.zookeeper.ZookeeperNode;
 import com.ljw.utils.zookeeper.ZookeeperUtils;
+import com.ljw.watch.UpAndDownWatcher;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 
 import java.net.InetSocketAddress;
@@ -50,7 +53,7 @@ public class ZookeeperRegistry extends AbstractRegistry {
         // 服务提供方的端口一般自己设定，我们还需要一个获取ip的方法
         // ip我们通常是需要一个局域网ip，不是127.0.0.1，也不是ipv6
         //TODO 后续处理端口问题
-        String node = parentNode + "/" + NetUtils.getIp() + ":" + LjwrpcBootstrap.PORT;
+        String node = parentNode + "/" + NetUtils.getIp() + ":" + LjwrpcBootstrap.getInstance().getConfiguration().getPort();
         if (!ZookeeperUtils.exists(zooKeeper, node, null)) {
             ZookeeperNode zookeeperNode = new ZookeeperNode(node, null);
             ZookeeperUtils.createNode(zooKeeper, zookeeperNode, null, CreateMode.EPHEMERAL);
@@ -72,7 +75,7 @@ public class ZookeeperRegistry extends AbstractRegistry {
         String serviceNode = Constant.BASE_PROVIDERS_PATH + "/" + servicename;
 
         // 2.从zk中获取他的子节点
-        List<String> children = ZookeeperUtils.getChildren(zooKeeper, serviceNode, null);
+        List<String> children = ZookeeperUtils.getChildren(zooKeeper, serviceNode, new UpAndDownWatcher());
         // 获取了所有的可用的服务列表
         List<InetSocketAddress> inetSocketAddresses = children.stream().map(ipString -> {
             String[] ipAndPort = ipString.split(":");
@@ -87,6 +90,6 @@ public class ZookeeperRegistry extends AbstractRegistry {
         // TODO q:我们每次调用相关方法的时候，都需要去注册中心拉取服务列表吗? 本地缓存 + watcher
         // TODO q:我们如何合理的选择一个可用的服务，而不是只获取第一个? 负载均衡策略
 
-        return inetSocketAddresses.get(0);
+        return inetSocketAddresses;
     }
 }

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration SYSTEM "http://ljw.com/ljwrpc-config.dtd">
+<configuration>
+    <port>8088</port>
+    <appName>ljwrpc-default-appName</appName>
+
+    <!-- 二选一 -->
+    <compressType type="gzip"/>
+    <compressor code="1" name="gzip" class="com.ljw.compress.impl.GzipCompressor" />
+
+    <!-- 二选一 -->
+    <serializeType type="hessian"/>
+    <serializer code="3" name="hessian" class="com.ljw.serialize.impl.HessianSerializer" />
+
+    <registry url="zookeeper://127.0.0.1:2181"/>
+
+    <!-- 二选一 -->
+    <loadBalancer class="com.ljw.loadbalancer.impl.MinimumResponseTimeLoadBalancer"/>
+    <loadBalancerType type="minimumResponseTime"/>
+
+    <idGenerator class="com.ljw.utils.IdGenerator" dataCenterId="2" MachineId="4"/>
+
+</configuration>

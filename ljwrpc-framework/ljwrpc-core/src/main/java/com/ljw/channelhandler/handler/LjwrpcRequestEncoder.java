@@ -78,11 +78,11 @@ public class LjwrpcRequestEncoder extends MessageToByteEncoder<LjwrpcRequest> {
         // 怎么实现 1、工具类 耦合性高 如果以后想替换序列化方式很难
         byte[] body = null;
         if (ljwrpcRequest.getRequestPayload() != null) {
-            Serializer serializer = SerializerFactory.getSerializer(ljwrpcRequest.getSerializeType()).getSerializer();
+            Serializer serializer = SerializerFactory.getSerializer(ljwrpcRequest.getSerializeType()).getImpl();
             body = serializer.serialize(ljwrpcRequest.getRequestPayload());
 
         // 2.根据配置的压缩方式进行压缩
-            Compressor compressor = CompressorFactory.getCompressor(ljwrpcRequest.getCompressType()).getCompressor();
+            Compressor compressor = CompressorFactory.getCompressor(ljwrpcRequest.getCompressType()).getImpl();
             body = compressor.compress(body);
         }
 

@@ -71,11 +71,6 @@ public class ConsistentHashBalancer extends AbstractLoadBalancer {
             return circle.get(hash);
         }
 
-        @Override
-        public void reBalance() {
-
-        }
-
         /**
          * 将每个节点挂载到hash环上
          * @param inetSocketAddress 具体的节点的地址
