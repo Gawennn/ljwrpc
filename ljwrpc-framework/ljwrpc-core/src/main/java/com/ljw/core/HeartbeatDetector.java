@@ -30,7 +30,8 @@ public class HeartbeatDetector {
     public static void detectHeartbeat(String servicename) {
         // 1、从注册中心拉取服务列表并建立连接
         Registry registry = LjwrpcBootstrap.getInstance().getConfiguration().getRegistryConfig().getRegistry();
-        List<InetSocketAddress> addresses = registry.lookup(servicename);
+        List<InetSocketAddress> addresses = registry.lookup(servicename,
+                LjwrpcBootstrap.getInstance().getConfiguration().getGroup());
 
         // 2、将连接进行缓存
         for (InetSocketAddress address : addresses) {

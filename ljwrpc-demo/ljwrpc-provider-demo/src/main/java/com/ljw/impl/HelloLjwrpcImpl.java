@@ -7,7 +7,7 @@ import com.ljw.annotation.LjwrpcApi;
  * @author 刘家雯
  * @version 1.0
  */
-@LjwrpcApi
+@LjwrpcApi(group = "primary")
 public class HelloLjwrpcImpl implements HelloLjwrpc {
 
     @Override

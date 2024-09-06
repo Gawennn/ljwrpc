@@ -8,6 +8,7 @@ import com.ljw.discovery.Registry;
 import com.ljw.enumeration.RequestType;
 import com.ljw.exceptions.DiscoveryException;
 import com.ljw.exceptions.NetworkException;
+import com.ljw.protection.CircuitBreaker;
 import com.ljw.serialize.SerializerFactory;
 import com.ljw.transport.LjwrpcRequest;
 import com.ljw.transport.RequestPayload;
@@ -18,7 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
-import java.util.Date;
+import java.net.SocketAddress;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -40,29 +44,29 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
     // 此处需要一个注册中心，和一个接口
     private final Registry registry;
     private final Class<?> interfaceRef;
+    private String group;
 
-    public RpcConsumerInvocationHandler(Registry registry, Class<?> interfaceRef) {
+    public RpcConsumerInvocationHandler(Registry registry, Class<?> interfaceRef, String group) {
         this.registry = registry;
         this.interfaceRef = interfaceRef;
+        this.group = group;
     }
 
     /**
      * 所有的方法调用，本质都会走到这里
-     * @param proxy the proxy instance that the method was invoked on
      *
+     * @param proxy  the proxy instance that the method was invoked on
      * @param method the {@code Method} instance corresponding to
-     * the interface method invoked on the proxy instance.  The declaring
-     * class of the {@code Method} object will be the interface that
-     * the method was declared in, which may be a superinterface of the
-     * proxy interface that the proxy class inherits the method through.
-     *
-     * @param args an array of objects containing the values of the
-     * arguments passed in the method invocation on the proxy instance,
-     * or {@code null} if interface method takes no arguments.
-     * Arguments of primitive types are wrapped in instances of the
-     * appropriate primitive wrapper class, such as
-     * {@code java.lang.Integer} or {@code java.lang.Boolean}.
-     *
+     *               the interface method invoked on the proxy instance.  The declaring
+     *               class of the {@code Method} object will be the interface that
+     *               the method was declared in, which may be a superinterface of the
+     *               proxy interface that the proxy class inherits the method through.
+     * @param args   an array of objects containing the values of the
+     *               arguments passed in the method invocation on the proxy instance,
+     *               or {@code null} if interface method takes no arguments.
+     *               Arguments of primitive types are wrapped in instances of the
+     *               appropriate primitive wrapper class, such as
+     *               {@code java.lang.Integer} or {@code java.lang.Boolean}.
      * @return 返回值
      * @throws Throwable
      */
@@ -82,37 +86,65 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
 
         while (true) {
             // 什么情况下需要重试 1.异常 2.响应有问题 code==500
+
+                /*
+                -----------------------封装报文----------------------
+                 */
+            RequestPayload requestPayload = RequestPayload.builder()
+                    .interfaceName(interfaceRef.getName())
+                    .methodName(method.getName())
+                    .parametersType(method.getParameterTypes())
+                    .parameterValue(args)
+                    .returnType(method.getReturnType())
+                    .build();
+
+            // 1.创建一个请求
+            LjwrpcRequest ljwrpcRequest = LjwrpcRequest.builder()
+                    .requestId(LjwrpcBootstrap.getInstance().getConfiguration().getIdGenerator().getId())
+                    .compressType(CompressorFactory.getCompressor(LjwrpcBootstrap.getInstance().getConfiguration().getCompressType()).getCode())
+                    .requestType(RequestType.REQUEST.getId())
+                    .serializeType(SerializerFactory.getSerializer(LjwrpcBootstrap.getInstance().getConfiguration().getSerializeType()).getCode())
+                    .timeStamp(System.currentTimeMillis())
+                    .requestPayload(requestPayload)
+                    .build();
+
+            // 2.将请求存入本地线程，需要在合适的时候remove
+            LjwrpcBootstrap.REQUEST_THREAD_LOCAL.set(ljwrpcRequest);
+
+
+            // 3、发现服务，从注册中心拉取服务列表，并通过客户端负载均衡寻找一个可用的服务
+            // 传入服务的名字，返回ip+端口
+            InetSocketAddress address = LjwrpcBootstrap.getInstance()
+                    .getConfiguration().getLoadBalancer().selectServiceAddress(interfaceRef.getName(), group);
+            if (log.isDebugEnabled()) {
+                log.debug("服务调用方,发现了服务【{}】的可用主机【{}】", interfaceRef.getName(), address);
+            }
+
+            // 4.获取当前地址所对应的断路器，如果断路器是打开的，则不发送请求，抛出异常
+            Map<SocketAddress, CircuitBreaker> everyIpCircuitBreaker = LjwrpcBootstrap.getInstance()
+                    .getConfiguration().getEveryIpCircuitBreaker();
+            CircuitBreaker circuitBreaker = everyIpCircuitBreaker.get(address);
+            if (circuitBreaker == null){
+                circuitBreaker = new CircuitBreaker(10, 0.5F);
+                everyIpCircuitBreaker.put(address, circuitBreaker);
+            }
+
             try {
-        /*
-        -----------------------封装报文----------------------
-         */
-                RequestPayload requestPayload = RequestPayload.builder()
-                        .interfaceName(interfaceRef.getName())
-                        .methodName(method.getName())
-                        .parametersType(method.getParameterTypes())
-                        .parameterValue(args)
-                        .returnType(method.getReturnType())
-                        .build();
+                // 如果断路器是打开的
+                if (ljwrpcRequest.getRequestType() != RequestType.HEART_BEAT.getId() && circuitBreaker.isBreake()) {
 
-                // 创建一个请求
-                LjwrpcRequest ljwrpcRequest = LjwrpcRequest.builder()
-                        .requestId(LjwrpcBootstrap.getInstance().getConfiguration().getIdGenerator().getId())
-                        .compressType(CompressorFactory.getCompressor(LjwrpcBootstrap.getInstance().getConfiguration().getCompressType()).getCode())
-                        .requestType(RequestType.REQUEST.getId())
-                        .serializeType(SerializerFactory.getSerializer(LjwrpcBootstrap.getInstance().getConfiguration().getSerializeType()).getCode())
-                        .timeStamp(System.currentTimeMillis())
-                        .requestPayload(requestPayload)
-                        .build();
+                    // 定期打开
+                    Timer timer = new Timer();
+                    timer.schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            LjwrpcBootstrap.getInstance()
+                                    .getConfiguration().getEveryIpCircuitBreaker()
+                                    .get(address).reset();
+                        }
+                    }, 5000);
 
-                // 将请求存入本地线程，需要在合适的时候remove
-                LjwrpcBootstrap.REQUEST_THREAD_LOCAL.set(ljwrpcRequest);
-
-
-                // 2、发现服务，从注册中心拉取服务列表，并通过客户端负载均衡寻找一个可用的服务
-                // 传入服务的名字，返回ip+端口
-                InetSocketAddress address = LjwrpcBootstrap.getInstance().getConfiguration().getLoadBalancer().selectServiceAddress(interfaceRef.getName());
-                if (log.isDebugEnabled()) {
-                    log.debug("服务调用方,发现了服务【{}】的可用主机【{}】", interfaceRef.getName(), address);
+                    throw new RuntimeException("当前断路器已经开启，无法发送请求");
                 }
 
                 // 2.使用netty连接服务器，发送 调用的 服务的名字+方法名字+参数列表 得到结果
@@ -121,7 +153,8 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
                 // 也就意味着每次在此处建立一个新的连接是不合适的
 
                 // 解决方案？缓存channel。尝试从缓存中获取channel。如果未获取，创建新的连接并获取
-                // 2.尝试获取一个可用通道
+
+                // 5.尝试获取一个可用通道
                 Channel channel = getAvailableChannel(address);
                 if (log.isDebugEnabled()) {
                     log.debug("获取了和【{}】建立的连接通道，准备发送数据", address);
@@ -145,7 +178,7 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
                 ---------------异步策略（不会阻塞）----------------
                  */
 
-                // 4.写出报文
+                // 6.写出报文
                 CompletableFuture<Object> completableFuture = new CompletableFuture<>();
                 // 将 completableFuture 暴露出去
                 LjwrpcBootstrap.PENDING_REQUEST.put(ljwrpcRequest.getRequestId(), completableFuture);
@@ -165,26 +198,32 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
                     }
                 });
 
-                // 清理ThreadLocal
+                // 7.清理ThreadLocal
                 LjwrpcBootstrap.REQUEST_THREAD_LOCAL.remove();
 
                 // 如果没有地方处理这个completableFuture，这里会阻塞，等待complete方法的执行
                 // q：我们需要在哪里调用complete方法得到结果？ 很明显，pipeline中最终的 handler 的处理结果
-                // 5.获取响应的结果
-                return completableFuture.get(10, TimeUnit.SECONDS);
+
+                // 8.获取响应的结果
+                Object result = completableFuture.get(10, TimeUnit.SECONDS);
+                // 记录成功的请求
+                circuitBreaker.recordRequest();
+                return result;
             } catch (Exception e) {
                 // 次数减一，并且等待固定时间，固定时间有一定的问题，容易重试风暴
                 tryTimes--;
+                // 记录错误的次数
+                circuitBreaker.recordErrorRequest();
                 try {
                     Thread.sleep(intervalTime);
-                } catch (InterruptedException ex){
+                } catch (InterruptedException ex) {
                     log.error("在进行重试时发生异常", ex);
                 }
-                if (tryTimes < 0){
+                if (tryTimes < 0) {
                     log.error("对方法【{}】进行远程调用时，重试{}次，依然不可调用", method.getName(), tryTimes, e);
                     break;
                 }
-                log.error("在进行第{}次重试时发生异常", 3-tryTimes, e);
+                log.error("在进行第{}次重试时发生异常", 3 - tryTimes, e);
             }
         }
         throw new RuntimeException("执行远程方法" + method.getName() + "调用失败。");
@@ -192,6 +231,7 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
 
     /**
      * 根据地址获取一个可用的通道
+     *
      * @param address
      * @return
      */
@@ -211,7 +251,7 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
             CompletableFuture<Channel> channelFuture = new CompletableFuture<>();
             NettyBootstrapInitializer.getBootstrap().connect(address).addListener(
                     (ChannelFutureListener) promise -> {
-                        if (promise.isDone()){
+                        if (promise.isDone()) {
                             // 异步的
                             if (log.isDebugEnabled()) {
                                 log.debug("已经和【{}】成功建立了连接", address);

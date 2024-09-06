@@ -6,6 +6,9 @@ import com.ljw.compress.impl.GzipCompressor;
 import com.ljw.discovery.RegistryConfig;
 import com.ljw.loadbalancer.LoadBalancer;
 import com.ljw.loadbalancer.impl.RoundRobinLoadBalancer;
+import com.ljw.protection.CircuitBreaker;
+import com.ljw.protection.RateLimiter;
+import com.ljw.protection.TokenBuketRateLimiter;
 import com.ljw.serialize.Serializer;
 import com.ljw.serialize.impl.JdkSerializer;
 import com.ljw.utils.IdGenerator;
@@ -22,7 +25,10 @@ import javax.xml.xpath.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.net.SocketAddress;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -41,6 +47,9 @@ public class Configuration {
     // 配置信息-->应用的程序名字
     private String appName = "default";
 
+    // 分组信息
+    private String group = "default";
+
     // 配置信息-->注册中心
     private RegistryConfig registryConfig = new RegistryConfig("zookeeper://127.0.0.1:2181");
 
@@ -55,6 +64,13 @@ public class Configuration {
 
     // 配置信息-->负载均衡策略
     private LoadBalancer loadBalancer = new RoundRobinLoadBalancer();
+
+    // 为每一个ip配置一个限流器
+    private final Map<SocketAddress, RateLimiter> everyIpRateLimiter = new ConcurrentHashMap<>(16);
+
+    // 为每一个ip配置一个断路器，熔断
+    private final Map<SocketAddress, CircuitBreaker> everyIpCircuitBreaker = new ConcurrentHashMap<>(16);
+
 
     // 读xml, dom4j
     public Configuration() {

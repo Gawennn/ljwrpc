@@ -184,6 +184,7 @@ public class LjwrpcBootstrap {
         // 配置reference，将来调用get方法时，方便生成代理对象
         // 1.reference需要一个注册中心
         reference.setRegistry(configuration.getRegistryConfig().getRegistry());
+        reference.setGroup(this.getConfiguration().getGroup())
         return this;
     }
 
@@ -239,10 +240,15 @@ public class LjwrpcBootstrap {
                 throw new RuntimeException(e);
             }
 
+            // 获取分组信息
+            LjwrpcApi ljwrpcApi = clazz.getAnnotation(LjwrpcApi.class);
+            String group = ljwrpcApi.group();
+
             for (Class<?> anInterface : interfaces) {
                 ServiceConfig<?> serviceConfig = new ServiceConfig<>();
                 serviceConfig.setInterface(anInterface);
                 serviceConfig.setRef(instance);
+                serviceConfig.setGroup(group);
 
                 if (log.isDebugEnabled()){
                     log.debug("-----> 已经通过包扫描，将服务【{}】发布.", anInterface);
@@ -251,7 +257,6 @@ public class LjwrpcBootstrap {
                 // 3、发布
                 publish(serviceConfig);
             }
-
         }
         return this;
     }
@@ -317,5 +322,10 @@ public class LjwrpcBootstrap {
 
     public Configuration getConfiguration() {
         return configuration;
+    }
+
+    public LjwrpcBootstrap group(String group) {
+        this.getConfiguration().setGroup(group);
+        return this;
     }
 }

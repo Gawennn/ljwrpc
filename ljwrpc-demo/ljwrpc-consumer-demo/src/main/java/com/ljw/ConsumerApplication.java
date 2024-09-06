@@ -30,20 +30,21 @@ public class ConsumerApplication {
                 .registry(new RegistryConfig("zookeeper://127.0.0.1:2181"))
                 .serialize("hessian")
                 .compress("gzip")
+                .group("primary")
                 .reference(reference);
 
         while (true) {
-            try {
-                Thread.sleep(10000);
-                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+//            try {
+//                Thread.sleep(10000);
+//                System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+//            } catch (InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
 
             // 获取一个代理对象
             HelloLjwrpc helloLjwrpc = reference.get();
-            for (int i = 0; i < 5; i++) {
-                String sayHi = helloLjwrpc.sayHi("你好");
+            for (int i = 0; i < 500; i++) {
+                String sayHi = helloLjwrpc.sayHi("你好ljwrpc");
                 log.info("sayHi-->{}", sayHi);
             }
         }
