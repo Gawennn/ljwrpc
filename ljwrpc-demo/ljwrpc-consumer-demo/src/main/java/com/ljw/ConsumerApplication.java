@@ -1,10 +1,8 @@
 package com.ljw;
 
-import com.ljw.core.HeartbeatDetector;
 import com.ljw.discovery.RegistryConfig;
+import com.ljw.proxy.ReferenceConfig;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.Map;
 
 /**
  * @author 刘家雯

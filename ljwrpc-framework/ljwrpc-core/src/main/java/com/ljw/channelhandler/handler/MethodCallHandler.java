@@ -2,6 +2,7 @@ package com.ljw.channelhandler.handler;
 
 import com.ljw.LjwrpcBootstrap;
 import com.ljw.ServiceConfig;
+import com.ljw.core.ShutDownHolder;
 import com.ljw.enumeration.RequestType;
 import com.ljw.enumeration.ResponseCode;
 import com.ljw.protection.RateLimiter;
@@ -20,6 +21,8 @@ import java.net.SocketAddress;
 import java.util.Map;
 
 /**
+ * 服务端进行方法调用的handler
+ *
  * @author 刘家雯
  * @version 1.0
  */
@@ -35,8 +38,21 @@ public class MethodCallHandler extends SimpleChannelInboundHandler<LjwrpcRequest
         ljwrpcResponse.setCompressType(ljwrpcRequest.getCompressType());
         ljwrpcResponse.setSerializeType(ljwrpcRequest.getSerializeType());
 
-        // 2.完成限流相关的操作
+        // 2.获得通道
         Channel channel = channelHandlerContext.channel();
+
+        // 3.查看关闭的挡板是否打开，如果挡板已经打开，返回一个错误的响应
+        if (ShutDownHolder.BAFFLE.get()) {
+            ljwrpcResponse.setCode(ResponseCode.CLOSING.getCode());
+            channel.writeAndFlush(ljwrpcResponse);
+            return;
+        }
+
+        // 4.计数器加一
+        ShutDownHolder.REQUEST_COUNTER.increment();
+
+
+        // 5.完成限流相关的操作
         SocketAddress socketAddress = channel.remoteAddress();
         Map<SocketAddress, RateLimiter> everyIpRateLimiter =
                 LjwrpcBootstrap.getInstance().getConfiguration().getEveryIpRateLimiter();
@@ -48,25 +64,27 @@ public class MethodCallHandler extends SimpleChannelInboundHandler<LjwrpcRequest
         }
         boolean allowRequest = rateLimiter.allowRequest();
 
+        // 6.处理请求的逻辑
         // 限流
         if (!allowRequest) {
             // 需要封装响应 并且返回了
             ljwrpcResponse.setCode(ResponseCode.RATE_LIMIT.getCode());
+            // 处理心跳
         } else if (ljwrpcRequest.getRequestType() == RequestType.HEART_BEAT.getId()) {
             // 需要封装响应并且返回
             ljwrpcResponse.setCode(ResponseCode.SUCCESS_HEART_BEAT.getCode());
         } else { // 正常调用
             /** ---------------------------------具体的调用过程---------------------------------**/
-            // 1.获取负载内容
+            // （1）获取负载内容
             RequestPayload requestPayload = ljwrpcRequest.getRequestPayload();
 
-            // 2.根据负载内容进行方法调用
+            // （2）根据负载内容进行方法调用
             try {
                 Object result = callTargetMethod(requestPayload);
                 if (log.isDebugEnabled()) {
                     log.debug("编号为【{}】的请求已经在服务端完成方法调用。", ljwrpcRequest.getRequestId());
                 }
-                // 3.封装响应   我们是否需要考虑另外一个问题，响应码，响应类型
+                // （3）封装响应   我们是否需要考虑另外一个问题，响应码，响应类型
                 ljwrpcResponse.setCode(ResponseCode.SUCCESS.getCode());
                 ljwrpcResponse.setBody(result);
             } catch (Exception e){
@@ -74,8 +92,11 @@ public class MethodCallHandler extends SimpleChannelInboundHandler<LjwrpcRequest
                 ljwrpcResponse.setCode(ResponseCode.FAIL.getCode());
             }
 
-            // 4.写出响应
+            // 6.写出响应
             channel.writeAndFlush(ljwrpcResponse);
+
+            // 7.计数器减一
+            ShutDownHolder.REQUEST_COUNTER.decrement();
         }
     }
 
@@ -85,7 +106,7 @@ public class MethodCallHandler extends SimpleChannelInboundHandler<LjwrpcRequest
         Class<?>[] parametersType = requestPayload.getParametersType();
         Object[] parameterValue = requestPayload.getParameterValue();
 
-        // 寻找到匹配的暴露出去的具体的实现
+        // 寻找到匹配的暴露出去的服务的具体实现
         ServiceConfig<?> serviceConfig = LjwrpcBootstrap.SERVERS_LIST.get(interfaceName);
         Object refImpl = serviceConfig.getRef();
 

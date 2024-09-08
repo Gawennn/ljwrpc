@@ -6,9 +6,11 @@ import com.ljw.channelhandler.handler.LjwrpcResponseEncoder;
 import com.ljw.channelhandler.handler.MethodCallHandler;
 import com.ljw.config.Configuration;
 import com.ljw.core.HeartbeatDetector;
+import com.ljw.core.LjwrpcShutdownHook;
 import com.ljw.discovery.Registry;
 import com.ljw.discovery.RegistryConfig;
 import com.ljw.loadbalancer.LoadBalancer;
+import com.ljw.proxy.ReferenceConfig;
 import com.ljw.transport.LjwrpcRequest;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -28,13 +30,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
+ * 启动类
+ *
  * @author 刘家雯
  * @version 1.0
  */
 @Slf4j
 public class LjwrpcBootstrap {
 
-    // LjwrpcBootstrap是一个单例，我们希望每个应用程序只有一个实
+    // LjwrpcBootstrap是一个单例，我们希望每个应用程序只有一个实例
     private static LjwrpcBootstrap ljwrpcBootstrap = new LjwrpcBootstrap();
 
     // 全局的配置中心
@@ -50,14 +54,13 @@ public class LjwrpcBootstrap {
     public final static Map<InetSocketAddress, Channel> CHANNEL_CACHE = new ConcurrentHashMap<>(16);
     public final static TreeMap<Long, Channel> ANSWER_TIME_CHANNEL_CACHE = new TreeMap<>();
 
-    // 维护已经发布且暴露的服务列表，key -> interface 的全限定名 value-》ServiceConfig
+    // 维护已经发布且暴露的服务列表，key -> interface 的权限定名 value-》ServiceConfig
     public final static Map<String, ServiceConfig<?>> SERVERS_LIST = new ConcurrentHashMap<>(16);
 
     // 定义对外全局挂起的 completableFuture
+    // 在异步调用的过程中，客户端会发起请求并立即返回一个“挂起的 CompletableFuture”
+    // 这个 CompletableFuture 在请求发出时不会立即完成，而是“挂起”，直到服务端的响应返回。
     public final static Map<Long, CompletableFuture<Object>> PENDING_REQUEST = new HashMap<>(128);
-
-    // 维护一个zookeeper实例
-    //private ZooKeeper zooKeeper;
 
     private LjwrpcBootstrap() {
         // 构造启动引导程序时，需要做一些什么初始化的事
@@ -84,10 +87,7 @@ public class LjwrpcBootstrap {
      * @return this 当前实例
      */
     public LjwrpcBootstrap registry(RegistryConfig registryConfig) {
-        // 这里维护一个zookeeper实例，但是如果这样写就会将zookeeper和当前工程耦合
-        // 我们其实更希望以后可以扩展更多种不同的实现
-
-        // 尝试使用 registryConfig 获取一个注册中心，有点工厂设计模式的意思
+        // 尝试使用 registryConfig 获取一个注册中心
         configuration.setRegistryConfig(registryConfig);
         return this;
     }
@@ -112,9 +112,11 @@ public class LjwrpcBootstrap {
      * @return this 当前实例
      */
     public LjwrpcBootstrap publish(ServiceConfig<?> service) {
-        // 我们抽象了注册中心的概念，使用注册中心的一个实现完成注册
-        // 有人会想，此时此刻难道不是强耦合了吗？
+
+        // 抽象了注册中心的概念，使用注册中心的一个实现完成注册
+        // 通过全局配置类拿到注册中心配置类，再用其中的getRegistry返回一个具体的注册中心如ZK进行registry注册
         configuration.getRegistryConfig().getRegistry().registry(service);
+        // 缓存起来
         SERVERS_LIST.put(service.getInterface().getName(), service);
         return this;
     }
@@ -135,27 +137,31 @@ public class LjwrpcBootstrap {
      * 启动netty服务
      */
     public void start() {
+        // 注册一个关闭应用程序的钩子函数
+        Runtime.getRuntime().addShutdownHook(new LjwrpcShutdownHook());
+
         // 1. 创建eventloop，老板只负责处理请求，会将请求分发至worker
         EventLoopGroup boss = new NioEventLoopGroup(2);
         EventLoopGroup worker = new NioEventLoopGroup(5);
         try {
-            // 2. 需要一个服务器引导程序
+            // 2. 需要一个服务器引导程序 ServerBootstrap：服务器端启动辅助对象
             ServerBootstrap serverBootstrap = new ServerBootstrap();
             // 3. 配置服务器
             serverBootstrap.group(boss, worker)
                     .channel(NioServerSocketChannel.class)
-                    .childHandler(new ChannelInitializer<SocketChannel>() {
+                    .childHandler(new ChannelInitializer<SocketChannel>() {//childHandler ChannelInitializer：Channel初始化器
                         @Override
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
                             // 核心，我们需要添加很多入站和出站的handler
-                            socketChannel.pipeline().addLast(new LoggingHandler())
+                            socketChannel.pipeline()
+                                    .addLast(new LoggingHandler())
                                     .addLast(new LjwrpcRequestDecoder())
                                     // 根据请求进行方法调用
                                     .addLast(new MethodCallHandler())
                                     .addLast(new LjwrpcResponseEncoder());
                         }
                     });
-            // 4. 绑定端口
+            // 4. 绑定本地端口，开始监听    ChannelFuture就是用来等待连接结果的，就是个异步结果的接收类，sync是对channelFuture这个异步结果进行同步等待，一直等到bind执行结果
             ChannelFuture channelFuture = serverBootstrap.bind(configuration.getPort()).sync();
 
             channelFuture.channel().closeFuture().sync();
@@ -184,7 +190,7 @@ public class LjwrpcBootstrap {
         // 配置reference，将来调用get方法时，方便生成代理对象
         // 1.reference需要一个注册中心
         reference.setRegistry(configuration.getRegistryConfig().getRegistry());
-        reference.setGroup(this.getConfiguration().getGroup())
+        reference.setGroup(this.getConfiguration().getGroup());
         return this;
     }
 
@@ -201,6 +207,11 @@ public class LjwrpcBootstrap {
         return this;
     }
 
+    /**
+     * 配置压缩的方式
+     * @param compressType 压缩的方式
+     * @return
+     */
     public LjwrpcBootstrap compress(String compressType) {
         configuration.setCompressType(compressType);
         if (log.isDebugEnabled()){
@@ -313,11 +324,6 @@ public class LjwrpcBootstrap {
         fileName = fileName.substring(0, fileName.indexOf(".class"));
 
         return fileName;
-    }
-
-    public static void main(String[] args) {
-        List<String> allClassNames = LjwrpcBootstrap.getInstance().getAllClassNames("com.ljw");
-        System.out.println(allClassNames);
     }
 
     public Configuration getConfiguration() {

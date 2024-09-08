@@ -180,7 +180,7 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
 
                 // 6.写出报文
                 CompletableFuture<Object> completableFuture = new CompletableFuture<>();
-                // 将 completableFuture 暴露出去
+                // 将 completableFuture 挂起暴露出去，等待处理结果的返回
                 LjwrpcBootstrap.PENDING_REQUEST.put(ljwrpcRequest.getRequestId(), completableFuture);
 
                 // 这里直接writeAndFlush 写出了一个请求，这个请求的实例就会进入pipeline，执行出站的一系列操作
@@ -188,9 +188,6 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
                 channel.writeAndFlush(ljwrpcRequest).addListener((ChannelFutureListener) promise -> {
                     // 当前的promise 将来返回的结果是什么,writeAndFlush的返回结果
                     // 一旦数据被写出去，这个promise就结束了
-//                    if (promise.isDone()) {
-//                        completableFuture.complete(promise.getNow());
-//                    }
 
                     // 只需要处理以下异常就可以了
                     if (!promise.isSuccess()) {

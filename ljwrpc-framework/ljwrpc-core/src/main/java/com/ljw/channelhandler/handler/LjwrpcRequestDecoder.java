@@ -74,6 +74,7 @@ public class LjwrpcRequestDecoder extends LengthFieldBasedFrameDecoder {
     }
 
     private Object decodeFrame(ByteBuf byteBuf) {
+
         // 1.解析魔数
         byte[] magic = new byte[MessageFormatConstant.MAGIC.length];
         byteBuf.readBytes(magic);
@@ -96,7 +97,7 @@ public class LjwrpcRequestDecoder extends LengthFieldBasedFrameDecoder {
         // 4.解析总长度
         int fulllength = byteBuf.readInt();
 
-        // 5.解析请求类型, TODO 判断是不是心跳检测
+        // 5.解析请求类型
         byte requestType = byteBuf.readByte();
 
         // 6.解析序列化类型
@@ -123,7 +124,6 @@ public class LjwrpcRequestDecoder extends LengthFieldBasedFrameDecoder {
         if (requestType == RequestType.HEART_BEAT.getId()) {
             return ljwrpcRequest;
         }
-
         int payloadLength = fulllength - headerLength;
         byte[] payload = new byte[payloadLength];
         byteBuf.readBytes(payload);

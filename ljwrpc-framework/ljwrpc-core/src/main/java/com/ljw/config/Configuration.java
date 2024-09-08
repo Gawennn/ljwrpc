@@ -1,33 +1,16 @@
 package com.ljw.config;
 
-import com.ljw.ProtocolConfig;
-import com.ljw.compress.Compressor;
-import com.ljw.compress.impl.GzipCompressor;
 import com.ljw.discovery.RegistryConfig;
 import com.ljw.loadbalancer.LoadBalancer;
 import com.ljw.loadbalancer.impl.RoundRobinLoadBalancer;
 import com.ljw.protection.CircuitBreaker;
 import com.ljw.protection.RateLimiter;
-import com.ljw.protection.TokenBuketRateLimiter;
-import com.ljw.serialize.Serializer;
-import com.ljw.serialize.impl.JdkSerializer;
-import com.ljw.utils.IdGenerator;
+import com.ljw.IdGenerator;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.*;
-import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.net.SocketAddress;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -60,7 +43,7 @@ public class Configuration {
     private String compressType = "gzip";
 
     // 配置信息-->ID生成器
-    private final IdGenerator idGenerator = new IdGenerator(1,2);
+    public IdGenerator idGenerator = new IdGenerator(1, 2);
 
     // 配置信息-->负载均衡策略
     private LoadBalancer loadBalancer = new RoundRobinLoadBalancer();
@@ -74,21 +57,13 @@ public class Configuration {
 
     // 读xml, dom4j
     public Configuration() {
-        // 1.成员变量的默认配置项
 
-        // 2.spi机制发现相关配置项
+        // spi机制发现相关配置项
         SpiResolver spiResolver = new SpiResolver();
         spiResolver.loadFromSpi(this);
 
-        // 3.通过读取xml获取上面的信息
+        // 通过读取xml获取上面的信息
         XmlResolver xmlResolver = new XmlResolver();
         xmlResolver.loadFromXml(this);
-
-        // 4.编程配置项，ljwrpcBootstrap提供
     }
-
-    public static void main(String[] args) {
-        Configuration configuration = new Configuration();
-    }
-
 }

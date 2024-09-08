@@ -44,7 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 public class LjwrpcResponseEncoder extends MessageToByteEncoder<LjwrpcResponse> {
 
     @Override
-    protected void encode(ChannelHandlerContext channelHandlerContext, LjwrpcResponse ljwrpcResponse, ByteBuf byteBuf) throws Exception {
+    protected void encode(ChannelHandlerContext channelHandlerContext, LjwrpcResponse ljwrpcResponse, ByteBuf byteBuf) {
         // 4个字节的魔数值
         byteBuf.writeBytes(MessageFormatConstant.MAGIC);
         // 1个字节的版本号
@@ -83,15 +83,14 @@ public class LjwrpcResponseEncoder extends MessageToByteEncoder<LjwrpcResponse> 
         int writerIndex = byteBuf.writerIndex();
         // 将写指针的位置移动到总长度的位置上
         byteBuf.writerIndex(MessageFormatConstant.MAGIC.length
-                + MessageFormatConstant.VERSION_LENGTH
-                + MessageFormatConstant.HEADER_FIELD_LENGTH);
+                + MessageFormatConstant.VERSION_LENGTH + MessageFormatConstant.HEADER_FIELD_LENGTH
+        );
         byteBuf.writeInt(MessageFormatConstant.HEADER_LENGTH + bodyLength);
-
-        //将写指针归位
+        // 将写指针归位
         byteBuf.writerIndex(writerIndex);
 
-        if (log.isDebugEnabled()) {
-            log.debug("响应【{}】已经在服务端完成编码工作。", ljwrpcResponse.getRequestId());
+        if(log.isDebugEnabled()){
+            log.debug("响应【{}】已经在服务端完成编码工作。",ljwrpcResponse.getRequestId());
         }
     }
 

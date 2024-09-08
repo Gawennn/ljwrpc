@@ -6,11 +6,12 @@ import com.ljw.discovery.impl.ZookeeperRegistry;
 import com.ljw.exceptions.DiscoveryException;
 
 /**
+ * 用来获取注册中心及其类型的，定义：zookeeper://127.0.0.1:2181
+ *
  * @author 刘家雯
  * @version 1.0
  */
 public class RegistryConfig {
-
 
     // 定义连接的url zookeeper://127.0.0.1:2181
     private final String connectString;

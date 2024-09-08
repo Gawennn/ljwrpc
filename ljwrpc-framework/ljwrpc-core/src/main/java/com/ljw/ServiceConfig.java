@@ -1,6 +1,8 @@
 package com.ljw;
 
 /**
+ * 服务端需要注册的服务接口
+ *
  * @author 刘家雯
  * @version 1.0
  */

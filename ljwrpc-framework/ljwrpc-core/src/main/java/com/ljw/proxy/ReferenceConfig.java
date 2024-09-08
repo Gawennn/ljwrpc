@@ -1,4 +1,4 @@
-package com.ljw;
+package com.ljw.proxy;
 
 import com.ljw.discovery.Registry;
 import com.ljw.exceptions.NetworkException;
@@ -17,12 +17,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * 用于生成服务接口的代理对象的
+ *
  * @author 刘家雯
  * @version 1.0
  */
 @Slf4j
 public class ReferenceConfig<T> {
 
+    // 保存服务接口的class类型
     private Class<T> interfaceRef;
 
     private Registry registry;

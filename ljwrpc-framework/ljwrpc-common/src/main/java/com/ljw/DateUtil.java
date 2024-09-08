@@ -1,4 +1,4 @@
-package com.ljw.utils;
+package com.ljw;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

@@ -6,7 +6,7 @@ import java.net.InetSocketAddress;
 import java.util.List;
 
 /**
- * 思考：注册中心应该具有什么样的能力
+ * 注册中心应该具有什么样的能力
  *
  * @author 刘家雯
  * @version 1.0

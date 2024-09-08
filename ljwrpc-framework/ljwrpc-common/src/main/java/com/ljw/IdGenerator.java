@@ -1,6 +1,5 @@
-package com.ljw.utils;
+package com.ljw;
 
-import java.util.Date;
 import java.util.concurrent.atomic.LongAdder;
 
 /**

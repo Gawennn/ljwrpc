@@ -10,6 +10,8 @@ import java.net.SocketException;
 import java.util.Enumeration;
 
 /**
+ * 获取Ip地址的工具类
+ *
  * @author 刘家雯
  * @version 1.0
  */

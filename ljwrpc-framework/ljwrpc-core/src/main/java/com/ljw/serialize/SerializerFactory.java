@@ -45,6 +45,11 @@ public class SerializerFactory {
         return SERIALIZER_CACHE.get(serializeType);
     }
 
+    /**
+     * 使用工厂方法获取一个SerializerWrapper
+     * @param serializeCode 序列化的编号
+     * @return SerializerWrapper
+     */
     public static ObjectWrapper<Serializer> getSerializer(Byte serializeCode) {
         ObjectWrapper<Serializer> serializerWrapper = SERIALIZER_CACHE_CODE.get(serializeCode);
         if (serializerWrapper == null) {

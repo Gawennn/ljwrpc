@@ -4,14 +4,13 @@ import com.ljw.discovery.RegistryConfig;
 import com.ljw.impl.HelloLjwrpcImpl;
 
 /**
+ * 服务提供方，需要注册服务，启动服务
  * @author 刘家雯
  * @version 1.0
  */
 public class ProviderApplication {
 
     public static void main(String[] args) {
-
-        //服务提供方，需要注册服务，启动服务
 
         // 1.封装需要发布的服务
         ServiceConfig<HelloLjwrpc> service = new ServiceConfig<>();
@@ -29,7 +28,7 @@ public class ProviderApplication {
                 // 发布服务
                 //.publish(service)
                 // 扫包批量发布
-                .scan("com.ljw")
+                .scan("com.ljw.impl")
                 // 启动服务
                 .start();
     }

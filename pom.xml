@@ -17,6 +17,8 @@
         <module>ljwrpc-demo/ljwrpc-consumer-demo</module>
         <module>ljwrpc-demo/ljwrpc-provider-demo</module>
         <module>ljwrpc-demo/ljwrpc-api</module>
+        <module>ljwrpc-demo/ljwrpc-springboot-provider</module>
+        <module>ljwrpc-demo/ljwrpc-springboot-consumer</module>
     </modules>
 
     <properties>

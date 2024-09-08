@@ -3,6 +3,7 @@
 <configuration>
     <port>8088</port>
     <appName>ljwrpc-default-appName</appName>
+    <registry url="zookeeper://127.0.0.1:2181"/>
 
     <!-- 二选一 -->
     <compressType type="gzip"/>
@@ -18,6 +19,6 @@
     <loadBalancer class="com.ljw.loadbalancer.impl.MinimumResponseTimeLoadBalancer"/>
     <loadBalancerType type="minimumResponseTime"/>
 
-    <idGenerator class="com.ljw.utils.IdGenerator" dataCenterId="2" MachineId="4"/>
+    <idGenerator class="com.ljw.IdGenerator" dataCenterId="2" MachineId="4"/>
 
 </configuration>

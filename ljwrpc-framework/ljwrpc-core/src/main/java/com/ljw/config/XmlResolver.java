@@ -6,7 +6,7 @@ import com.ljw.discovery.RegistryConfig;
 import com.ljw.loadbalancer.LoadBalancer;
 import com.ljw.serialize.Serializer;
 import com.ljw.serialize.SerializerFactory;
-import com.ljw.utils.IdGenerator;
+import com.ljw.IdGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -42,7 +42,7 @@ public class XmlResolver {
             factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
 
             DocumentBuilder builder = factory.newDocumentBuilder();
-            InputStream inputStream = ClassLoader.getSystemClassLoader().getResourceAsStream("yrpc.xml");
+            InputStream inputStream = ClassLoader.getSystemClassLoader().getResourceAsStream("ljwrpc.xml");
             Document doc = builder.parse(inputStream);
 
             // 2、获取一个xpath解析器

@@ -123,7 +123,7 @@ public class LjwrpcResponseDecoder extends LengthFieldBasedFrameDecoder {
         byte[] payload = new byte[bodyLength];
         byteBuf.readBytes(payload);
 
-        if (payload != null && payload.length > 0) {
+        if (payload.length > 0) {
             // 有了字节数组之后就可以解压缩反序列化
             // 1、解压缩
             Compressor compressor = CompressorFactory.getCompressor(compressType).getImpl();

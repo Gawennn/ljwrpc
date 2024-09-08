@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 /**
+ * 有关ZK的工具类
+ *
  * @author 刘家雯
  * @version 1.0
  */
@@ -100,7 +102,7 @@ public class ZookeeperUtils {
         try {
             return zk.exists(node, watcher) != null;
         } catch (KeeperException | InterruptedException e) {
-            log.error("判断节点【{}】是否存在是发生异常", node, e);
+            log.error("判断节点【{}】是否存在时发生异常", node, e);
             throw new ZookeeperException(e);
         }
     }
