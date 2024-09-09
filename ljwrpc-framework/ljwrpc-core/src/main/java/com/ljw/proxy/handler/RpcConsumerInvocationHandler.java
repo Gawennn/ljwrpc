@@ -112,8 +112,9 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
             LjwrpcBootstrap.REQUEST_THREAD_LOCAL.set(ljwrpcRequest);
 
 
-            // 3、发现服务，从注册中心拉取服务列表，并通过客户端负载均衡寻找一个可用的服务
+            // 3、发现服务，从注册中心拉取服务列表，并通过客户端负载均衡寻找一个可用的服务实例
             // 传入服务的名字，返回ip+端口
+            // 通过实现LoadBalancer接口，并重写selectServiceAddress方法获取负载均衡器，并再进行负载均衡，返回地址。那么具体使用了哪个负载均衡器，是由.getConfiguration().getLoadBalancer()配置了的！
             InetSocketAddress address = LjwrpcBootstrap.getInstance()
                     .getConfiguration().getLoadBalancer().selectServiceAddress(interfaceRef.getName(), group);
             if (log.isDebugEnabled()) {

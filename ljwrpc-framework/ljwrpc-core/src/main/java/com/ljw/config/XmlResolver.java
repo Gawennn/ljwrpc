@@ -41,28 +41,25 @@ public class XmlResolver {
             // 禁用外部实体解析：可以通过调用setFeature(String name, boolean value)方法并将“http://apache.org/xml/features/nonvalidating/load-external-dtd”设置为“false”来禁用外部实体解析。
             factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
 
+            // 通过DocumentBuilderFactory 和 DocumentBuilder 读取 XML 文件，生成 Document 对象
             DocumentBuilder builder = factory.newDocumentBuilder();
             InputStream inputStream = ClassLoader.getSystemClassLoader().getResourceAsStream("ljwrpc.xml");
             Document doc = builder.parse(inputStream);
 
-            // 2、获取一个xpath解析器
+            // 2、获取一个xpath解析器，XPath 使用路径表达式来选取 XML 文档中的节点
             XPathFactory xPathfactory = XPathFactory.newInstance();
             XPath xpath = xPathfactory.newXPath();
 
-            // 3、解析所有的标签
+            // 3、解析所有的标签，并进行 configuration 配置
             configuration.setPort(resolvePort(doc, xpath));
             configuration.setAppName(resolveAppName(doc, xpath));
-
             configuration.setIdGenerator(resolveIdGenerator(doc, xpath));
-
             configuration.setRegistryConfig(resolveRegistryConfig(doc, xpath));
-
-
-            // 处理使用的压缩方式和序列化方式
             configuration.setCompressType(resolveCompressType(doc, xpath));
             configuration.setSerializeType(resolveSerializeType(doc, xpath));
 
-            // 配置新的压缩方式和序列化方式，并将其纳入工厂中
+
+            // 配置新的压缩方式和序列化方式，并将其纳入工厂中。resolveCompressCompressor表示解析一个具体的压缩器
             ObjectWrapper<Compressor> compressorObjectWrapper = resolveCompressCompressor(doc, xpath);
             CompressorFactory.addCompressor(compressorObjectWrapper);
 
@@ -220,9 +217,12 @@ public class XmlResolver {
             XPathExpression expr = xpath.compile(expression);
             // 我们的表达式可以帮我们获取节点
             Node targetNode = (Node) expr.evaluate(doc, XPathConstants.NODE);
+            // 获取节点的class属性，为一个类的全限定名
             String className = targetNode.getAttributes().getNamedItem("class").getNodeValue();
+            // 反射 获取对象
             Class<?> aClass = Class.forName(className);
             Object instant = null;
+            // 创建这个类的实例对象
             if (paramType == null) {
                 instant = aClass.getConstructor().newInstance();
             } else {
@@ -237,7 +237,7 @@ public class XmlResolver {
     }
 
     /**
-     * 获得一个节点文本值   <port>7777</>
+     * 获得一个节点文本值   <port>8088</>
      * @param doc        文档对象
      * @param xpath      xpath解析器
      * @param expression xpath表达式
@@ -245,9 +245,11 @@ public class XmlResolver {
      */
     private String parseString(Document doc, XPath xpath, String expression) {
         try {
+            // 编译 xpath 表达式。expression：一个 XPath 表达式，表示要解析的节点路径
             XPathExpression expr = xpath.compile(expression);
-            // 我们的表达式可以帮我们获取节点
+            // 根据表达式获取节点
             Node targetNode = (Node) expr.evaluate(doc, XPathConstants.NODE);
+            // 返回节点的文本内容
             return targetNode.getTextContent();
         } catch (XPathExpressionException e) {
             log.error("An exception occurred while parsing the expression.", e);
@@ -256,7 +258,7 @@ public class XmlResolver {
     }
 
     /**
-     * 获得一个节点属性的值   <port num="7777"></>
+     * 获得一个节点属性的值   <port num="8088"></>，这里的 num="8088" 就是节点属性值
      * @param doc           文档对象
      * @param xpath         xpath解析器
      * @param expression    xpath表达式
@@ -265,9 +267,11 @@ public class XmlResolver {
      */
     private String parseString(Document doc, XPath xpath, String expression, String AttributeName) {
         try {
+            // 编译 xpath 表达式
             XPathExpression expr = xpath.compile(expression);
-            // 我们的表达式可以帮我们获取节点
+            // 根据表达式查找目标节点对象
             Node targetNode = (Node) expr.evaluate(doc, XPathConstants.NODE);
+            // 返回节点的指定属性的值
             return targetNode.getAttributes().getNamedItem(AttributeName).getNodeValue();
         } catch (XPathExpressionException e) {
             log.error("An exception occurred while parsing the expression.", e);

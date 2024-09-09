@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * 实现一个简易版本的spi
+ * 实现一个简易版本的spi。加载和管理 SPI 的配置和实现类实例
  *
  * @author 刘家雯
  * @version 1.0
@@ -42,6 +42,7 @@ public class SpiHandler {
         if (fileUrl != null) {
             File file = new File(fileUrl.getPath());
             File[] children = file.listFiles();
+            // 遍历每个 spi文件
             if (children != null) {
                 for (File child : children) {
                     String key = child.getName();

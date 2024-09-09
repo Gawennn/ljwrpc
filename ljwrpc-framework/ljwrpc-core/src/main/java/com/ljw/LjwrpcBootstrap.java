@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 public class LjwrpcBootstrap {
 
     // LjwrpcBootstrap是一个单例，我们希望每个应用程序只有一个实例
+    // 在这个类被加载时，这个单例就创建了  ==》饿汉式
     private static LjwrpcBootstrap ljwrpcBootstrap = new LjwrpcBootstrap();
 
     // 全局的配置中心
@@ -62,8 +63,10 @@ public class LjwrpcBootstrap {
     // 这个 CompletableFuture 在请求发出时不会立即完成，而是“挂起”，直到服务端的响应返回。
     public final static Map<Long, CompletableFuture<Object>> PENDING_REQUEST = new HashMap<>(128);
 
+    // 在 LjwrpcBootstrap 的构造器时，就初始化了 Configuration ，因此，这里必然要读到Configuration这个全局配置类，自动加载了
     private LjwrpcBootstrap() {
         // 构造启动引导程序时，需要做一些什么初始化的事
+        // 读取 Configuration 全局配置类
         configuration = new Configuration();
     }
 
@@ -200,6 +203,7 @@ public class LjwrpcBootstrap {
      * @return
      */
     public LjwrpcBootstrap serialize(String serializeType) {
+        // 将传入的序列化类型存储到 configuration 中
         configuration.setSerializeType(serializeType);
         if (log.isDebugEnabled()){
             log.debug("我们配置了使用的序列化的方式为【{}】", serializeType);

@@ -10,6 +10,8 @@ import com.ljw.spi.SpiHandler;
 import java.util.List;
 
 /**
+ * 使用 SPI 实现进行系统配置和初始化
+ *
  * @author 刘家雯
  * @version 1.0
  */
@@ -28,9 +30,9 @@ public class SpiResolver {
             configuration.setLoadBalancer(loadBalancerWrappers.get(0).getImpl());
         }
 
-        List<ObjectWrapper<Compressor>> objectWrappers = SpiHandler.getList(Compressor.class);
-        if (objectWrappers != null) {
-            objectWrappers.forEach(CompressorFactory::addCompressor);
+        List<ObjectWrapper<Compressor>> compressorobjectWrappers = SpiHandler.getList(Compressor.class);
+        if (compressorobjectWrappers != null) {
+            compressorobjectWrappers.forEach(CompressorFactory::addCompressor);
         }
 
         List<ObjectWrapper<Serializer>> serializerobjectWrappers = SpiHandler.getList(Serializer.class);

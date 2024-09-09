@@ -17,6 +17,13 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * 全局的配置类，代码配置--> xml配置--> 默认项
  *
+ * 当在 LjwrpcBootstrap 中调用 serialize("hessian") 时，它会直接覆盖 Configuration 类中 serializeType 的值。
+ * 由于这个调用发生在构造函数之后，所以最终生效的是代码中的动态配置
+ * 换句话说，构造函数加载 XML 配置后，如果通过 LjwrpcBootstrap.serialize 手动指定序列化方式（如 "hessian"），
+ * 那么会覆盖构造函数中从 XML 加载的值
+ *
+ * 任何配置如代码配置、xml配置、spi配置都是通过修改这个全局配置类来完成的
+ *
  * @author 刘家雯
  * @version 1.0
  */

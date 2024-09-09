@@ -1,6 +1,7 @@
 package com.ljw.serialize;
 
 import com.ljw.config.ObjectWrapper;
+import com.ljw.serialize.impl.HessianSerializer;
 import com.ljw.serialize.impl.JdkSerializer;
 import com.ljw.serialize.impl.JsonSerializer;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +22,7 @@ public class SerializerFactory {
     static {
         ObjectWrapper<Serializer> jdk = new ObjectWrapper<>((byte) 1, "jkd", new JdkSerializer());
         ObjectWrapper<Serializer> json = new ObjectWrapper<>((byte) 2, "json", new JsonSerializer());
-        ObjectWrapper<Serializer> hessian = new ObjectWrapper<>((byte) 3, "hessian", new JsonSerializer());
+        ObjectWrapper<Serializer> hessian = new ObjectWrapper<>((byte) 3, "hessian", new HessianSerializer());
         SERIALIZER_CACHE.put("jdk", jdk);
         SERIALIZER_CACHE.put("json", json);
         SERIALIZER_CACHE.put("hessian", hessian);

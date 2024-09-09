@@ -39,21 +39,4 @@ public class JsonSerializer implements Serializer {
         }
         return t;
     }
-
-    public static void main(String[] args) {
-        Serializer serializer = new JsonSerializer();
-
-        RequestPayload requestPayload = new RequestPayload();
-        requestPayload.setInterfaceName("xxxx");
-        requestPayload.setMethodName("yyy");
-        requestPayload.setParameterValue(new Object[]{"xxxx"});
-
-        byte[] serialize = serializer.serialize(requestPayload);
-        System.out.println(Arrays.toString(serialize));
-
-        RequestPayload deserialize = serializer.deserialize(serialize, RequestPayload.class);
-        System.out.println(deserialize);
-
-
-    }
 }

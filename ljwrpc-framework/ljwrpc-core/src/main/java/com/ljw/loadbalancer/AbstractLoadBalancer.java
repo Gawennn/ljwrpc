@@ -19,6 +19,12 @@ public abstract class AbstractLoadBalancer implements LoadBalancer{
     // 一个服务会匹配一个selector
     private Map<String, Selector> cache = new ConcurrentHashMap<>(8);
 
+    /**
+     * 找到具体的服务实例
+     * @param serviceName 服务名称
+     * @param group
+     * @return 某服务实例地址
+     */
     @Override
     public InetSocketAddress selectServiceAddress(String serviceName, String group) {
 
@@ -31,7 +37,7 @@ public abstract class AbstractLoadBalancer implements LoadBalancer{
             List<InetSocketAddress> serviceList = LjwrpcBootstrap.getInstance()
                     .getConfiguration().getRegistryConfig().getRegistry().lookup(serviceName, group);
 
-            // 提供一些算法负责选取合适的节点
+            // 提供一些算法负责选取合适的节点   获取负载均衡器
             selector = getSelector(serviceList);
 
             // 将selector放入缓存当中

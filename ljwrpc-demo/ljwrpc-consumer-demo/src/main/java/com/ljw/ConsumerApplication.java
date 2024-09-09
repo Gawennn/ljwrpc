@@ -23,6 +23,7 @@ public class ConsumerApplication {
         // 2.拉取服务列表
         // 3.选择一个服务并连接服务
         // 4.发送请求，携带一些信息（接口名，参数列表，方法名字），获得结果
+        // 若不用代码配置，则LjwrpcBootstrap.getInstance()会直接进入
         LjwrpcBootstrap.getInstance()
                 .application("first-ljwrpc-consumer")
                 .registry(new RegistryConfig("zookeeper://127.0.0.1:2181"))

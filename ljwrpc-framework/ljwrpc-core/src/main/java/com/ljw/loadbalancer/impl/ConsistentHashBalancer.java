@@ -97,7 +97,7 @@ public class ConsistentHashBalancer extends AbstractLoadBalancer {
         }
 
         /**
-         * 具体的hash算法  TODO 这样也是不均匀的
+         * 具体的hash算法
          * @param s
          * @return
          */

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE configuration SYSTEM "http://ljw.com/ljwrpc-config.dtd">
 <configuration>
+
     <port>8088</port>
     <appName>ljwrpc-default-appName</appName>
     <registry url="zookeeper://127.0.0.1:2181"/>
