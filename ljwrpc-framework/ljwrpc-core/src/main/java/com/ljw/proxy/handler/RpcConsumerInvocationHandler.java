@@ -111,12 +111,11 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
             // 2.将请求存入本地线程，需要在合适的时候remove
             LjwrpcBootstrap.REQUEST_THREAD_LOCAL.set(ljwrpcRequest);
 
-
             // 3、发现服务，从注册中心拉取服务列表，并通过客户端负载均衡寻找一个可用的服务实例
             // 传入服务的名字，返回ip+端口
             // 通过实现LoadBalancer接口，并重写selectServiceAddress方法获取负载均衡器，并再进行负载均衡，返回地址。那么具体使用了哪个负载均衡器，是由.getConfiguration().getLoadBalancer()配置了的！
             InetSocketAddress address = LjwrpcBootstrap.getInstance()
-                    .getConfiguration().getLoadBalancer().selectServiceAddress(interfaceRef.getName(), group);
+                    .getConfiguration().getLoadBalancer().selectServiceAddress(interfaceRef.getName(), group);// group提供了分组，要在哪个分组里的服务列表里找
             if (log.isDebugEnabled()) {
                 log.debug("服务调用方,发现了服务【{}】的可用主机【{}】", interfaceRef.getName(), address);
             }
@@ -147,13 +146,6 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
 
                     throw new RuntimeException("当前断路器已经开启，无法发送请求");
                 }
-
-                // 2.使用netty连接服务器，发送 调用的 服务的名字+方法名字+参数列表 得到结果
-                // 定义线程池，EventLoopGroup
-                // 整个连接过程放在这里行不行，也就意味着每个调用都要产生一个新的netty连接。如何缓存我们的连接，
-                // 也就意味着每次在此处建立一个新的连接是不合适的
-
-                // 解决方案？缓存channel。尝试从缓存中获取channel。如果未获取，创建新的连接并获取
 
                 // 5.尝试获取一个可用通道
                 Channel channel = getAvailableChannel(address);
@@ -204,8 +196,10 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
 
                 // 8.获取响应的结果
                 Object result = completableFuture.get(10, TimeUnit.SECONDS);
-                // 记录成功的请求
+
+                // 记录每个发出去的请求，后面判断断路器的开或关用
                 circuitBreaker.recordRequest();
+
                 return result;
             } catch (Exception e) {
                 // 次数减一，并且等待固定时间，固定时间有一定的问题，容易重试风暴

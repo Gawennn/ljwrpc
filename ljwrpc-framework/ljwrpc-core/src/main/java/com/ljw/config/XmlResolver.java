@@ -29,7 +29,7 @@ import java.util.Objects;
 public class XmlResolver {
 
     /**
-     * 从配置文件读取配置信息，我们不使用dom4j，使用原生的api
+     * 从配置文件读取配置信息
      * @param configuration 配置实例
      */
     public void loadFromXml(Configuration configuration) {

@@ -11,14 +11,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class CircuitBreaker {
 
-    // 理论上：标准的断路器应该有3种状态 open close half_open，我们为了简单只选取两种
+    // 理论上：标准的断路器应该有3种状态 open close half_open，为了简单只选取两种
     private volatile boolean isOpne = false;
 
     // 需要搜集指标 异常的数量 比例
     // 总的请求数
     private AtomicInteger requestCount = new AtomicInteger(0);
 
-    // 异常的请求书
+    // 异常的请求数
     private AtomicInteger errorRequest = new AtomicInteger(0);
 
     // 异常的阈值
@@ -34,6 +34,7 @@ public class CircuitBreaker {
     public boolean isBreake(){
         // 优先返回，如果已经打开了，就直接返回true
         if (isOpne){
+            // 打开
             return true;
         }
 

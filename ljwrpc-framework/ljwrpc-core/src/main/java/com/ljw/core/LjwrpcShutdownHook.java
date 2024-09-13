@@ -1,8 +1,9 @@
 package com.ljw.core;
 
-import java.util.concurrent.TimeUnit;
 
 /**
+ * 钩子函数，实现服务的优雅停机
+ *
  * @author 刘家雯
  * @version 1.0
  */

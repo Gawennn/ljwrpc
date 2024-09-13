@@ -1,6 +1,8 @@
 package com.ljw;
 
 /**
+ * zk的一些常量
+ *
  * @author 刘家雯
  * @version 1.0
  */

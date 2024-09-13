@@ -31,6 +31,7 @@ public class ZookeeperUtils {
     }
 
     public static ZooKeeper createZookeeper(String connectString, int timeout){
+        // 锁
         CountDownLatch countDownLatch = new CountDownLatch(1);
         try {
             // 创建zk实例，建立连接
@@ -42,7 +43,7 @@ public class ZookeeperUtils {
                 }
             }); // 构建zookeeper
 
-            countDownLatch.await();
+            countDownLatch.await(); // 等待工作线程完成
 
             return zooKeeper;
         } catch (IOException | InterruptedException e) {

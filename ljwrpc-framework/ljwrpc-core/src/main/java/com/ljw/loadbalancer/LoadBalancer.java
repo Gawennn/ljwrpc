@@ -11,8 +11,6 @@ import java.util.List;
  */
 public interface LoadBalancer {
 
-    // 他应该具备的能力，根据服务列表找到一个可用的服务
-
     /**
      * 根据服务名获取一个可用的服务
      * @param serviceName 服务名称

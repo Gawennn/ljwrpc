@@ -1,10 +1,11 @@
 package com.ljw.core;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
+ * 挡板，用来开启或关闭 一个服务的
+ *
  * @author 刘家雯
  * @version 1.0
  */

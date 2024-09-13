@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * 此类为简单的入站消息处理器
+ * 此类为客户端方简单的入站消息处理器
  * 用于处理服务器端返回的 LjwrpcResponse，并根据返回的响应码和状态执行对应的逻辑操作
  *
  * @author 刘家雯

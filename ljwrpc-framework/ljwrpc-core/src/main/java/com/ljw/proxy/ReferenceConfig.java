@@ -42,6 +42,7 @@ public class ReferenceConfig<T> {
      * @return 代理对象
      */
     public T get() {
+
         // 此处一定是使用了动态代理完成了一些工作
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         Class<T>[] classes = new Class[]{interfaceRef};

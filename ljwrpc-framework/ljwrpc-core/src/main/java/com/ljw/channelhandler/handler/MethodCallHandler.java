@@ -53,7 +53,9 @@ public class MethodCallHandler extends SimpleChannelInboundHandler<LjwrpcRequest
 
 
         // 5.完成限流相关的操作
+        // remoteAddress 就是客户端的 IP 地址和端口号（即与服务器通信的客户端的标识）。因为不同的客户端可能会有不同的限流策略
         SocketAddress socketAddress = channel.remoteAddress();
+        // 每个客户端ip 都配一个限流器
         Map<SocketAddress, RateLimiter> everyIpRateLimiter =
                 LjwrpcBootstrap.getInstance().getConfiguration().getEveryIpRateLimiter();
 
@@ -72,6 +74,7 @@ public class MethodCallHandler extends SimpleChannelInboundHandler<LjwrpcRequest
             // 处理心跳
         } else if (ljwrpcRequest.getRequestType() == RequestType.HEART_BEAT.getId()) {
             // 需要封装响应并且返回
+            // 心跳请求不要被限流
             ljwrpcResponse.setCode(ResponseCode.SUCCESS_HEART_BEAT.getCode());
         } else { // 正常调用
             /** ---------------------------------具体的调用过程---------------------------------**/

@@ -55,7 +55,7 @@ public class LjwrpcBootstrap {
     public final static Map<InetSocketAddress, Channel> CHANNEL_CACHE = new ConcurrentHashMap<>(16);
     public final static TreeMap<Long, Channel> ANSWER_TIME_CHANNEL_CACHE = new TreeMap<>();
 
-    // 维护已经发布且暴露的服务列表，key -> interface 的权限定名 value-》ServiceConfig
+    // 维护已经发布且暴露的服务列表，key -> interface 的全限定名， value-》ServiceConfig
     public final static Map<String, ServiceConfig<?>> SERVERS_LIST = new ConcurrentHashMap<>(16);
 
     // 定义对外全局挂起的 completableFuture
@@ -70,6 +70,7 @@ public class LjwrpcBootstrap {
         configuration = new Configuration();
     }
 
+    // 获取该实例
     public static LjwrpcBootstrap getInstance() {
         return ljwrpcBootstrap;
     }
@@ -137,10 +138,66 @@ public class LjwrpcBootstrap {
     }
 
     /**
+     * 扫描包，进行批量注册
+     * @param packageName 包名
+     * @return this本身
+     */
+    public LjwrpcBootstrap scan(String packageName) {
+
+        // 1、需要通过packageName获取其下的所有的类的全限定名称
+        List<String> classNames = getAllClassNames(packageName);
+
+        // 2、通过反射获取他的接口，构建具体实现
+        List<Class<?>> classes = classNames.stream()
+                .map(className -> {
+                    try {
+                        return Class.forName(className);
+                    } catch (ClassNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).filter(clazz -> clazz.getAnnotation(LjwrpcApi.class) != null)
+                .collect(Collectors.toList());
+
+        for (Class<?> clazz : classes) {
+            // 获取他的接口
+            Class<?>[] interfaces = clazz.getInterfaces();
+            Object instance = null;
+            try {
+                // 通过构造器创建实例
+                instance = clazz.getConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
+                     InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+
+            // 获取分组信息
+            LjwrpcApi ljwrpcApi = clazz.getAnnotation(LjwrpcApi.class);
+            String group = ljwrpcApi.group();
+
+            for (Class<?> anInterface : interfaces) {
+                // 封装需要发布的服务
+                ServiceConfig<?> serviceConfig = new ServiceConfig<>();
+                serviceConfig.setInterface(anInterface);
+                serviceConfig.setRef(instance);
+                serviceConfig.setGroup(group);
+
+                if (log.isDebugEnabled()){
+                    log.debug("-----> 已经通过包扫描，将服务【{}】发布.", anInterface);
+                }
+
+                // 3、发布
+                publish(serviceConfig);
+            }
+        }
+        return this;
+    }
+
+    /**
      * 启动netty服务
      */
     public void start() {
-        // 注册一个关闭应用程序的钩子函数
+
+        // 注册一个关闭应用程序的钩子函数，可实现服务的优雅停机
         Runtime.getRuntime().addShutdownHook(new LjwrpcShutdownHook());
 
         // 1. 创建eventloop，老板只负责处理请求，会将请求分发至worker
@@ -164,9 +221,10 @@ public class LjwrpcBootstrap {
                                     .addLast(new LjwrpcResponseEncoder());
                         }
                     });
-            // 4. 绑定本地端口，开始监听    ChannelFuture就是用来等待连接结果的，就是个异步结果的接收类，sync是对channelFuture这个异步结果进行同步等待，一直等到bind执行结果
+            // 4. 绑定本地端口，将此服务的端口暴露出去，开始监听    ChannelFuture就是用来等待连接结果的，就是个异步结果的接收类，sync是对channelFuture这个异步结果进行同步等待，一直等到bind执行结果
             ChannelFuture channelFuture = serverBootstrap.bind(configuration.getPort()).sync();
 
+            // 主线程必须要等关闭完成，才能开始后续逻辑
             channelFuture.channel().closeFuture().sync();
         } catch (InterruptedException e){
             e.printStackTrace();
@@ -178,6 +236,78 @@ public class LjwrpcBootstrap {
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * 获取指定包下的所有类名
+     * @param packageName
+     * @return
+     */
+    private List<String> getAllClassNames(String packageName) {
+        // 1、通过传入的packageName获得决定路径 /Users/gawen/java/.../classes/com/ljw
+        String basePath = packageName.replaceAll("\\.", "/");
+        // 获取绝对路径
+        URL url = ClassLoader.getSystemClassLoader().getResource(basePath);
+        if (url == null) {
+            throw new RuntimeException("包扫描时发现路径不存在.");
+        }
+        String absolutePath = url.getPath();
+        List<String> classNames = new ArrayList<>();
+        classNames = recursionFile(absolutePath, classNames, basePath);
+
+        return classNames;
+    }
+
+    /**
+     * 遍历指定路径下所有文件和子目录
+     * @param absolutePath
+     * @param classNames
+     * @param basePath
+     * @return
+     */
+    private List<String> recursionFile(String absolutePath, List<String> classNames, String basePath) {
+        // 获取文件
+        File file = new File(absolutePath);
+        // 判断文件是否是文件夹
+        if (file.isDirectory()){
+            // 找到文件夹的所有名称
+            File[] children = file.listFiles(pathname -> pathname.isDirectory() || pathname.getPath().contains(".class"));
+            if (children == null || children.length == 0) {
+                return classNames;
+            }
+            for (File child : children) {
+                if (child.isDirectory()){
+                    // 递归调用 若还是目录，继续递归
+                    recursionFile(child.getAbsolutePath(), classNames, basePath);
+                } else {
+                    // 文件 -> 类的全限定名称
+                    String className = getClassNameByAbsolutePath(child.getAbsolutePath(), basePath);
+                    classNames.add(className);
+                }
+            }
+        } else {
+            // 文件 -> 类的权限定名称
+            String className = getClassNameByAbsolutePath(absolutePath, basePath);
+            classNames.add(className);
+        }
+
+        return classNames;
+    }
+
+    /**
+     * 将 .class 文件的绝对路径转换为对应的全限定类名
+     * @param absolutePath
+     * @param basePath
+     * @return
+     */
+    private String getClassNameByAbsolutePath(String absolutePath, String basePath) {
+        // /Users/gawen/java/IdeaProjects/ljwrpc/ljwrpc-framework/ljwrpc-core/target/classes/com/ljw/channelhandler/handler/LjwrpcRequestDecoder.class
+        // com/ljw/channelhandler/handler/LjwrpcRequestDecoder.class --> com.ljw.channelhandler.handler.LjwrpcRequestDecoder
+        String fileName = absolutePath.substring(absolutePath.indexOf(basePath))
+                .replaceAll("/", ".");
+        fileName = fileName.substring(0, fileName.indexOf(".class"));
+
+        return fileName;
     }
 
     /**
@@ -224,111 +354,9 @@ public class LjwrpcBootstrap {
         return this;
     }
 
-    /**
-     * 扫描包，进行批量注册
-     * @param packageName 包名
-     * @return this本身
-     */
-    public LjwrpcBootstrap scan(String packageName) {
-        // 1、需要通过packageName获取其下的所有的类的权限定名称
-        List<String> classNames = getAllClassNames(packageName);
-
-        // 2、通过反射获取他的接口，构建具体实现
-        List<Class<?>> classes = classNames.stream()
-                .map(className -> {
-                    try {
-                        return Class.forName(className);
-                    } catch (ClassNotFoundException e) {
-                        throw new RuntimeException(e);
-                    }
-                }).filter(clazz -> clazz.getAnnotation(LjwrpcApi.class) != null)
-                .collect(Collectors.toList());
-
-        for (Class<?> clazz : classes) {
-            // 获取他的接口
-            Class<?>[] interfaces = clazz.getInterfaces();
-            Object instance = null;
-            try {
-                instance = clazz.getConstructor().newInstance();
-            } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
-                     InvocationTargetException e) {
-                throw new RuntimeException(e);
-            }
-
-            // 获取分组信息
-            LjwrpcApi ljwrpcApi = clazz.getAnnotation(LjwrpcApi.class);
-            String group = ljwrpcApi.group();
-
-            for (Class<?> anInterface : interfaces) {
-                ServiceConfig<?> serviceConfig = new ServiceConfig<>();
-                serviceConfig.setInterface(anInterface);
-                serviceConfig.setRef(instance);
-                serviceConfig.setGroup(group);
-
-                if (log.isDebugEnabled()){
-                    log.debug("-----> 已经通过包扫描，将服务【{}】发布.", anInterface);
-                }
-
-                // 3、发布
-                publish(serviceConfig);
-            }
-        }
-        return this;
-    }
-
-    private List<String> getAllClassNames(String packageName) {
-        // 1、通过传入的packageName获得决定路径 /Users/gawen/java/.../classes/com/ljw
-        String basePath = packageName.replaceAll("\\.", "/");
-        URL url = ClassLoader.getSystemClassLoader().getResource(basePath);
-        if (url == null) {
-            throw new RuntimeException("包扫描时发现路径不存在.");
-        }
-        String absolutePath = url.getPath();
-        List<String> classNames = new ArrayList<>();
-        classNames = recursionFile(absolutePath, classNames, basePath);
-
-        return classNames;
-    }
-
-    private List<String> recursionFile(String absolutePath, List<String> classNames, String basePath) {
-        // 获取文件
-        File file = new File(absolutePath);
-        // 判断文件是否是文件夹
-        if (file.isDirectory()){
-            // 找到文件夹的所有名称
-            File[] children = file.listFiles(pathname -> pathname.isDirectory() || pathname.getPath().contains(".class"));
-            if (children == null || children.length == 0) {
-                return classNames;
-            }
-            for (File child : children) {
-                if (child.isDirectory()){
-                    // 递归调用
-                    recursionFile(child.getAbsolutePath(), classNames, basePath);
-                } else {
-                    // 文件 -> 类的权限定名称
-                    String className = getClassNameByAbsolutePath(child.getAbsolutePath(), basePath);
-                    classNames.add(className);
-                }
-            }
-        } else {
-            // 文件 -> 类的权限定名称
-            String className = getClassNameByAbsolutePath(absolutePath, basePath);
-            classNames.add(className);
-        }
 
 
-        return classNames;
-    }
 
-    private String getClassNameByAbsolutePath(String absolutePath, String basePath) {
-        // /Users/gawen/java/IdeaProjects/ljwrpc/ljwrpc-framework/ljwrpc-core/target/classes/com/ljw/channelhandler/handler/LjwrpcRequestDecoder.class
-        // com/ljw/channelhandler/handler/LjwrpcRequestDecoder.class --> com.ljw.channelhandler.handler.LjwrpcRequestDecoder
-        String fileName = absolutePath.substring(absolutePath.indexOf(basePath))
-                .replaceAll("/", ".");
-        fileName = fileName.substring(0, fileName.indexOf(".class"));
-
-        return fileName;
-    }
 
     public Configuration getConfiguration() {
         return configuration;

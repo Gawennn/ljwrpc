@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -44,6 +45,7 @@ public class MinimumResponseTimeLoadBalancer extends AbstractLoadBalancer {
             }
 
             // 直接从缓存中获取一个可用的就行了
+            System.out.println("----->"+ Arrays.toString(LjwrpcBootstrap.CHANNEL_CACHE.values().toArray()));
             Channel channel = (Channel)LjwrpcBootstrap.CHANNEL_CACHE.values().toArray()[0];
             return (InetSocketAddress) channel.remoteAddress();
         }

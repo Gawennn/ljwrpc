@@ -28,6 +28,7 @@ import java.util.concurrent.TimeoutException;
 public class HeartbeatDetector {
 
     public static void detectHeartbeat(String servicename) {
+
         // 1、从注册中心拉取服务列表并建立连接
         Registry registry = LjwrpcBootstrap.getInstance().getConfiguration().getRegistryConfig().getRegistry();
         List<InetSocketAddress> addresses = registry.lookup(servicename,
@@ -61,7 +62,7 @@ public class HeartbeatDetector {
             // 将响应时长的map清空
             LjwrpcBootstrap.ANSWER_TIME_CHANNEL_CACHE.clear();
 
-            // 遍历所有的cahnnel
+            // 遍历所有的channel
             Map<InetSocketAddress, Channel> cache = LjwrpcBootstrap.CHANNEL_CACHE;
             for (Map.Entry<InetSocketAddress, Channel> entry : cache.entrySet()) {
                 // 定义一个重试的次数
@@ -91,7 +92,6 @@ public class HeartbeatDetector {
                         }
                     });
 
-                    //
                     Long endTime = 0L;
                     try {
                         // 阻塞方法，get()方法如果得不到结果，就会一直阻塞

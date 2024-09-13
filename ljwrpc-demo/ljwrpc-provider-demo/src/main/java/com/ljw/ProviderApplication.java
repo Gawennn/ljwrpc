@@ -12,10 +12,10 @@ public class ProviderApplication {
 
     public static void main(String[] args) {
 
-        // 1.封装需要发布的服务
-        ServiceConfig<HelloLjwrpc> service = new ServiceConfig<>();
-        service.setInterface(HelloLjwrpc.class);
-        service.setRef(new HelloLjwrpcImpl());
+//        // 1.封装需要发布的服务
+//        ServiceConfig<HelloLjwrpc> service = new ServiceConfig<>();
+//        service.setInterface(HelloLjwrpc.class);
+//        service.setRef(new HelloLjwrpcImpl());
 
         // 2.通过启动引导程序，启动服务提供方
         // （1）配置 -- 应用的名称 -- 注册中心 -- 序列化协议 -- 压缩方式
@@ -24,9 +24,9 @@ public class ProviderApplication {
                 .application("first-ljwrpc-provider")
                 // 配置注册中心
                 .registry(new RegistryConfig("zookeeper://127.0.0.1:2181"))
+                // 序列化和压缩
                 .serialize("jdk")
-                // 发布服务
-                //.publish(service)
+                .compress("gzip")
                 // 扫包批量发布
                 .scan("com.ljw.impl")
                 // 启动服务
