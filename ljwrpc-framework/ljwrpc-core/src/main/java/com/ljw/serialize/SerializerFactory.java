@@ -1,11 +1,10 @@
 package com.ljw.serialize;
 
 import com.ljw.config.ObjectWrapper;
-import com.ljw.serialize.impl.HessianSerializer;
-import com.ljw.serialize.impl.JdkSerializer;
-import com.ljw.serialize.impl.JsonSerializer;
+import com.ljw.serialize.impl.*;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.Serial;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -23,13 +22,19 @@ public class SerializerFactory {
         ObjectWrapper<Serializer> jdk = new ObjectWrapper<>((byte) 1, "jkd", new JdkSerializer());
         ObjectWrapper<Serializer> json = new ObjectWrapper<>((byte) 2, "json", new JsonSerializer());
         ObjectWrapper<Serializer> hessian = new ObjectWrapper<>((byte) 3, "hessian", new HessianSerializer());
+        ObjectWrapper<Serializer> kryo = new ObjectWrapper<>((byte) 4, "kryo", new KryoSerializer());
+        ObjectWrapper<Serializer> protobuf = new ObjectWrapper<>((byte) 5, "protobuf", new ProtobufSerializer());
         SERIALIZER_CACHE.put("jdk", jdk);
         SERIALIZER_CACHE.put("json", json);
         SERIALIZER_CACHE.put("hessian", hessian);
+        SERIALIZER_CACHE.put("kryo", kryo);
+        SERIALIZER_CACHE.put("protobuf", protobuf);
 
         SERIALIZER_CACHE_CODE.put((byte) 1, jdk);
         SERIALIZER_CACHE_CODE.put((byte) 2, json);
         SERIALIZER_CACHE_CODE.put((byte) 3, hessian);
+        SERIALIZER_CACHE_CODE.put((byte) 4, kryo);
+        SERIALIZER_CACHE_CODE.put((byte) 5, protobuf);
     }
 
     /**

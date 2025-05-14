@@ -123,6 +123,6 @@ public class MethodCallHandler extends SimpleChannelInboundHandler<LjwrpcRequest
             log.error("调用服务【{}】的方法【{}】时发生了异常。", interfaceName, methodName, e);
             throw new RuntimeException(e);
         }
-        return null;
+        return returnValue;
     }
 }

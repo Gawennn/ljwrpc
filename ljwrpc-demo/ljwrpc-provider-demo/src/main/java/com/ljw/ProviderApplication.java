@@ -25,7 +25,7 @@ public class ProviderApplication {
                 // 配置注册中心
                 .registry(new RegistryConfig("zookeeper://127.0.0.1:2181"))
                 // 序列化和压缩
-                .serialize("jdk")
+                .serialize("hessian")
                 .compress("gzip")
                 // 扫包批量发布
                 .scan("com.ljw.impl")

@@ -45,6 +45,7 @@ public class LjwrpcRequestEncoder extends MessageToByteEncoder<LjwrpcRequest> {
 
     @Override
     protected void encode(ChannelHandlerContext channelHandlerContext, LjwrpcRequest ljwrpcRequest, ByteBuf byteBuf) throws Exception {
+
         // 4个字节的魔数值
         byteBuf.writeBytes(MessageFormatConstant.MAGIC);
         // 1个字节的版本号

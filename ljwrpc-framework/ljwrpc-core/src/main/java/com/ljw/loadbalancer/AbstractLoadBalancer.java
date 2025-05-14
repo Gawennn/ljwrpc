@@ -15,7 +15,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class AbstractLoadBalancer implements LoadBalancer{
 
-
     // 一个服务会匹配一个selector
     private Map<String, Selector> cache = new ConcurrentHashMap<>(8);
 
@@ -55,7 +54,7 @@ public abstract class AbstractLoadBalancer implements LoadBalancer{
     }
 
     /**
-     * 由子类进行扩展
+     * 由子类进行扩展，调用这个抽象方法实际会去调用此重写方法
      * @param serviceList 服务类表
      * @return 负载均衡算法选择器
      */

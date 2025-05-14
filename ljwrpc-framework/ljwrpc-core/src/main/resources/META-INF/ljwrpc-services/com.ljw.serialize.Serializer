@@ -1,2 +1,5 @@
 3-hessian-com.ljw.serialize.impl.HessianSerializer
 1-jdk-com.ljw.serialize.impl.JdkSerializer
+4-kryo-com.ljw.serializer.impl.KryoSerializer
+2-json-com.ljw.serializer.impl.JsonSerializer
+5-protobuf-com.ljw.serializer.impl.ProtobufSerializer

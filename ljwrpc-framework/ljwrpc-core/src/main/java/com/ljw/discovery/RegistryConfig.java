@@ -27,6 +27,7 @@ public class RegistryConfig {
     public Registry getRegistry() {
         // 1.获取注册中心的类型
         String registryType = getRegistryType(connectString, true).toLowerCase().trim();
+        // 2、通过类型获取具体注册中心
         if (registryType.equals("zookeeper")) {
             String host = getRegistryType(connectString, false);
             return new ZookeeperRegistry(host, Constant.TIME_OUT);
@@ -43,9 +44,9 @@ public class RegistryConfig {
             throw new RuntimeException("给定的注册中心连接url不合法");
         }
         if (ifType) {
-            return typeAndHost[0];
+            return typeAndHost[0]; // 类型
         } else {
-            return typeAndHost[1];
+            return typeAndHost[1]; // 实例
         }
     }
 }

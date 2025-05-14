@@ -55,7 +55,7 @@ public class LjwrpcBootstrap {
     public final static Map<InetSocketAddress, Channel> CHANNEL_CACHE = new ConcurrentHashMap<>(16);
     public final static TreeMap<Long, Channel> ANSWER_TIME_CHANNEL_CACHE = new TreeMap<>();
 
-    // 维护已经发布且暴露的服务列表，key -> interface 的全限定名， value-》ServiceConfig
+    // 维护已经发布且暴露的服务列表，key -> interfaceName 接口名， value -> ServiceConfig 真正的接口
     public final static Map<String, ServiceConfig<?>> SERVERS_LIST = new ConcurrentHashMap<>(16);
 
     // 定义对外全局挂起的 completableFuture
@@ -125,17 +125,17 @@ public class LjwrpcBootstrap {
         return this;
     }
 
-    /**
-     * 批量发布服务
-     * @param services 封装的需要发布的服务的集合
-     * @return this 当前实例
-     */
-    public LjwrpcBootstrap publish(List<ServiceConfig<?>> services) {
-        for (ServiceConfig<?> service : services) {
-            this.publish(service);
-        }
-        return this;
-    }
+//    /**
+//     * 批量发布服务
+//     * @param services 封装的需要发布的服务的集合
+//     * @return this 当前实例
+//     */
+//    public LjwrpcBootstrap publish(List<ServiceConfig<?>> services) {
+//        for (ServiceConfig<?> service : services) {
+//            this.publish(service);
+//        }
+//        return this;
+//    }
 
     /**
      * 扫描包，进行批量注册
@@ -147,7 +147,7 @@ public class LjwrpcBootstrap {
         // 1、需要通过packageName获取其下的所有的类的全限定名称
         List<String> classNames = getAllClassNames(packageName);
 
-        // 2、通过反射获取他的接口，构建具体实现
+        // 2、创建类对象。通过反射获取他的接口，并构建具体实现
         List<Class<?>> classes = classNames.stream()
                 .map(className -> {
                     try {
@@ -208,6 +208,7 @@ public class LjwrpcBootstrap {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
             // 3. 配置服务器
             serverBootstrap.group(boss, worker)
+                    // 建立一个nio的channel连接
                     .channel(NioServerSocketChannel.class)
                     .childHandler(new ChannelInitializer<SocketChannel>() {//childHandler ChannelInitializer：Channel初始化器
                         @Override
@@ -224,11 +225,12 @@ public class LjwrpcBootstrap {
             // 4. 绑定本地端口，将此服务的端口暴露出去，开始监听    ChannelFuture就是用来等待连接结果的，就是个异步结果的接收类，sync是对channelFuture这个异步结果进行同步等待，一直等到bind执行结果
             ChannelFuture channelFuture = serverBootstrap.bind(configuration.getPort()).sync();
 
-            // 主线程必须要等关闭完成，才能开始后续逻辑
+            // 主线程阻塞在这，等待关闭事件的完成，也就是等请求都处理完。等待四次挥手结束
             channelFuture.channel().closeFuture().sync();
         } catch (InterruptedException e){
             e.printStackTrace();
         } finally {
+            // 主线程拿到了关闭的结果，最终都要优雅关闭boss和worker线程，防止浪费资源
             try {
                 boss.shutdownGracefully().sync();
                 worker.shutdownGracefully().sync();
@@ -244,7 +246,7 @@ public class LjwrpcBootstrap {
      * @return
      */
     private List<String> getAllClassNames(String packageName) {
-        // 1、通过传入的packageName获得决定路径 /Users/gawen/java/.../classes/com/ljw
+        // 1、通过传入的packageName获得绝对路径 /Users/gawen/java/.../classes/com/ljw
         String basePath = packageName.replaceAll("\\.", "/");
         // 获取绝对路径
         URL url = ClassLoader.getSystemClassLoader().getResource(basePath);
@@ -286,7 +288,7 @@ public class LjwrpcBootstrap {
                 }
             }
         } else {
-            // 文件 -> 类的权限定名称
+            // 文件 -> 类的全限定名称
             String className = getClassNameByAbsolutePath(absolutePath, basePath);
             classNames.add(className);
         }

@@ -2,6 +2,7 @@ package com.ljw.config;
 
 import com.ljw.discovery.RegistryConfig;
 import com.ljw.loadbalancer.LoadBalancer;
+import com.ljw.loadbalancer.impl.ConsistentHashBalancer;
 import com.ljw.loadbalancer.impl.RoundRobinLoadBalancer;
 import com.ljw.protection.CircuitBreaker;
 import com.ljw.protection.RateLimiter;
@@ -53,7 +54,7 @@ public class Configuration {
     public IdGenerator idGenerator = new IdGenerator(1, 2);
 
     // 配置信息-->负载均衡策略
-    private LoadBalancer loadBalancer = new RoundRobinLoadBalancer();
+    private LoadBalancer loadBalancer = new ConsistentHashBalancer();
 
     // 为每一个ip配置一个限流器
     private final Map<SocketAddress, RateLimiter> everyIpRateLimiter = new ConcurrentHashMap<>(16);

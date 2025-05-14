@@ -38,7 +38,7 @@ public class JdkSerializer implements Serializer {
 
     @Override
     public <T> T deserialize(byte[] bytes, Class<T> clazz) {
-        if (bytes == null | clazz == null){
+        if (bytes == null | clazz == null) {
             return null;
         }
 
@@ -51,7 +51,7 @@ public class JdkSerializer implements Serializer {
             if (log.isDebugEnabled()) {
                 log.debug("类【{}】已经完成了反序列化操作.", clazz);
             }
-            return (T)object;
+            return (T) object;
         } catch (IOException | ClassNotFoundException e) {
             log.error("反序列化对象【{}】时发生异常。", clazz);
             throw new SerializeException(e);

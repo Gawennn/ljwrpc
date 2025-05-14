@@ -17,7 +17,7 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * 轮询的负载均衡策略
+ * 一致性哈希的负载均衡策略
  *
  * @author 刘家雯
  * @version 1.0
@@ -63,8 +63,8 @@ public class ConsistentHashBalancer extends AbstractLoadBalancer {
 
             // 判断该hash值是否能直接落在一个服务器上，和服务器的hash一样
             if (!circle.containsKey(hash)){
-                // 寻找离我最近的那个节点
                 SortedMap<Integer, InetSocketAddress> tailMap = circle.tailMap(hash);
+                // 用tailMap方法得到这个点的后面的map(子集)，判断后面的map是否为空。为空：返回整个头节点；不为空就正常返回里面的第一个节点
                 hash = tailMap.isEmpty() ? circle.firstKey() : tailMap.firstKey();
             }
 
@@ -88,10 +88,8 @@ public class ConsistentHashBalancer extends AbstractLoadBalancer {
         }
 
         private void removeNodeFromCircle(InetSocketAddress inetSocketAddress) {
-            // 为每个节点生成匹配的虚拟节点进行挂载
             for (int i = 0; i < virtualNodes; i++) {
                 int hash = hash(inetSocketAddress + "-" + i);
-                // 挂载到hash环上
                 circle.remove(hash, inetSocketAddress);
             }
         }

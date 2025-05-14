@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * 注册中心服务上下线
+ *
  * @author 刘家雯
  * @version 1.0
  */
@@ -55,7 +57,7 @@ public class UpAndDownWatcher implements Watcher {
                 }
             }
 
-            // 获得负载均衡器，进行重新的laodbalance
+            // 获得负载均衡器，进行重新的loadbalance
             LoadBalancer loadBalancer = LjwrpcBootstrap.getInstance().getConfiguration().getLoadBalancer();
             loadBalancer.reLoadBalance(serviceName, addresses);
 

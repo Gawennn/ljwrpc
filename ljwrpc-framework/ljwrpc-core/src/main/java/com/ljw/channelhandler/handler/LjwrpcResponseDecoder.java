@@ -44,6 +44,7 @@ import java.util.Date;
 public class LjwrpcResponseDecoder extends LengthFieldBasedFrameDecoder {
 
     public LjwrpcResponseDecoder() {
+        // 解决粘包拆包的问题
         super(
                 // 找到当前报文的总长度，截取报文，截取出来的报文可以去进行解析
                 // 最大帧的长度，超过这个maxFrameLength值会直接丢弃

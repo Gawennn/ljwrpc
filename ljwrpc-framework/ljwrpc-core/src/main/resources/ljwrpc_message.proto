@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package com.ljw.serialize.protobuf;
+
+// 请求体
+message RequestPayload {
+  string interface_name = 1;
+  string method_name = 2;
+  repeated string parameters_type = 3; // repeated可以用来表示类似于数组或列表
+  repeated bytes parameter_value  =4;
+  string return_type = 5;
+}
+
+// 请求
+message LjwrpcRequest {
+  int64 request_id = 1;
+  bytes request_type = 2;
+  bytes compress_type = 3;
+  bytes serialize_type = 4;
+  int64 time_stamp = 5;
+  RequestPayload request_payload = 6;
+}
+
+// 响应
+message LjwrpcResponse {
+  int64 request_id = 1;
+  bytes request_type = 2;
+  bytes compress_type = 3;
+  bytes serialize_type = 4;
+  int64 time_stamp = 5;
+  bytes code = 6;
+  bytes body = 7;
+}

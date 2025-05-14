@@ -18,11 +18,13 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 用于生成服务接口的代理对象的
+ * 生成的代理对象的配置类
  *
  * @author 刘家雯
  * @version 1.0
  */
 @Slf4j
+@SuppressWarnings("all")
 public class ReferenceConfig<T> {
 
     // 保存服务接口的class类型
@@ -46,9 +48,9 @@ public class ReferenceConfig<T> {
         // 此处一定是使用了动态代理完成了一些工作
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         Class<T>[] classes = new Class[]{interfaceRef};
-        InvocationHandler handler = new RpcConsumerInvocationHandler(registry, interfaceRef, group);
+        InvocationHandler handler = new RpcConsumerInvocationHandler(registry, interfaceRef, group); // 事件处理
 
-        // 使用动态代理生成代理对象
+        // 使用JDK动态代理生成代理对象
         Object helloProxy = Proxy.newProxyInstance(classLoader, classes, handler);
         return (T) helloProxy;
     }

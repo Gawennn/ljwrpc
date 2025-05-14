@@ -84,7 +84,7 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
             intervalTime = 2000;
         }
 
-        while (true) {
+        while (true) { // while (true)就是让请求一直重试发，直到重试次数用光；获取根本不用重试，直接成功return
             // 什么情况下需要重试 1.异常 2.响应有问题 code==500
 
                 /*
@@ -130,10 +130,10 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
             }
 
             try {
-                // 如果断路器是打开的
+                // 如果断路器是打开的，也就是断路
                 if (ljwrpcRequest.getRequestType() != RequestType.HEART_BEAT.getId() && circuitBreaker.isBreake()) {
 
-                    // 定期打开
+                    // 定期重置断路器
                     Timer timer = new Timer();
                     timer.schedule(new TimerTask() {
                         @Override
@@ -194,7 +194,7 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
                 // 如果没有地方处理这个completableFuture，这里会阻塞，等待complete方法的执行
                 // q：我们需要在哪里调用complete方法得到结果？ 很明显，pipeline中最终的 handler 的处理结果
 
-                // 8.获取响应的结果
+                // 8.获取响应的结果（同步阻塞，等待异步操作的结果，何时有结果？worker线程调用complete）
                 Object result = completableFuture.get(10, TimeUnit.SECONDS);
 
                 // 记录每个发出去的请求，后面判断断路器的开或关用
@@ -241,7 +241,7 @@ public class RpcConsumerInvocationHandler implements InvocationHandler {
 
             // 使用addListener执行的异步操作
             CompletableFuture<Channel> channelFuture = new CompletableFuture<>();
-            NettyBootstrapInitializer.getBootstrap().connect(address).addListener(
+            NettyBootstrapInitializer.getBootstrap().connect(address).addListener( // 三次握手建立连接
                     (ChannelFutureListener) promise -> {
                         if (promise.isDone()) {
                             // 异步的

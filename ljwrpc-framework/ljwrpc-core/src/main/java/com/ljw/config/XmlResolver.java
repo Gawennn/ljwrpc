@@ -168,6 +168,7 @@ public class XmlResolver {
 
     /**
      * 解析压缩的算法名称
+     *
      * @param doc   文档
      * @param xpath xpath解析器
      * @return 压缩算法名称

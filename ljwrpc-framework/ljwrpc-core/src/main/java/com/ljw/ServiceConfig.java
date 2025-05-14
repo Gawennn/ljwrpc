@@ -8,9 +8,9 @@ package com.ljw;
  */
 public class ServiceConfig<T> {
 
-    private Class<?> interfaceProvider;
-    private Object ref;
-    private String group = "default";
+    private Class<?> interfaceProvider; // 服务
+    private Object ref; // 服务实例
+    private String group = "default"; // 分组
 
     public Class<?> getInterface() {
         return interfaceProvider;

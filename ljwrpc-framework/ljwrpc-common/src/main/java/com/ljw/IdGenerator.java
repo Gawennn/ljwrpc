@@ -1,5 +1,7 @@
 package com.ljw;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -8,6 +10,7 @@ import java.util.concurrent.atomic.LongAdder;
  * @author 刘家雯
  * @version 1.0
  */
+@Slf4j
 public class IdGenerator {
 
     // 这是单机版本的线程安全的id发号器，一旦变成集群状态就不行了，每个机器都是从0开始
@@ -28,9 +31,9 @@ public class IdGenerator {
     // 起始时间戳
     public static final long START_STAMP = DateUtil.get("2022-1-1").getTime();
     //
-    public static final long DATA_CENTER_BIT = 5L;
-    public static final long MACHINE_BIT = 5L;
-    public static final long SEQUENCE_BIT = 12L;
+    public static final long DATA_CENTER_BIT = 5L; // 数据中心ID占5位 最多支持32个数据中心(2^5)
+    public static final long MACHINE_BIT = 5L; // 机器ID占5位 每个数据中心最多32台机器
+    public static final long SEQUENCE_BIT = 12L; // 序列号占12位 每毫秒最多生成4096个ID(2^12)
 
     // 最大值 Math.pow(2,5) - 1
     public static final long DATA_CENTER_MAX = ~(-1L << DATA_CENTER_BIT);
@@ -39,9 +42,9 @@ public class IdGenerator {
 
     // 时间戳（42） 机房号（5） 机器号（5） 序列号（12）
     // 101010101010101010101010101010101010101011 10101 10101 101010101101
-    public static final long TIMESTAMP_LEFT = DATA_CENTER_BIT + MACHINE_BIT + SEQUENCE_BIT;
-    public static final long DATA_CENTER_LEFT = MACHINE_BIT + SEQUENCE_BIT;
-    public static final long MACHINE_LEFT = SEQUENCE_BIT;
+    public static final long TIMESTAMP_LEFT = DATA_CENTER_BIT + MACHINE_BIT + SEQUENCE_BIT; // 22
+    public static final long DATA_CENTER_LEFT = MACHINE_BIT + SEQUENCE_BIT; // 17
+    public static final long MACHINE_LEFT = SEQUENCE_BIT; // 15
 
     private long dataCenterId;
     private long machineId;
@@ -56,13 +59,17 @@ public class IdGenerator {
         long timeStamp = currentTime - START_STAMP;
 
         // 判断时钟回拨
-        if (timeStamp < lastTimeStamp){
+        if (timeStamp < lastTimeStamp){ // 判断当前时间戳是否小于上次的时间戳，小于了就说明时钟回调了
             throw new RuntimeException("您的服务器进行了时钟回调。");
         }
 
         // sequenceId需要做一些处理，如果是同一个时间节点，必须自增
-        if (timeStamp == lastTimeStamp){
+        if (timeStamp == lastTimeStamp){ // 说明在同一ms内生成的id，得让序列号自增了
             sequenceId.increment();
+            // 添加序列号耗尽警告
+            if (sequenceId.sum() > SEQUENCE_MAX * 0.9) {
+                log.warn("序列号使用超过90%");
+            }
             if (sequenceId.sum() >= SEQUENCE_MAX){ // 说明此时的sequence用光了，就要进入下一个时间戳
                 timeStamp = getNextTimeStamp();
                 sequenceId.reset(); // sequence制零

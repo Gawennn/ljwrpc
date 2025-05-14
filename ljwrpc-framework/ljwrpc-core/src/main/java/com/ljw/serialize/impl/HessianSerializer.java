@@ -25,7 +25,7 @@ public class HessianSerializer implements Serializer {
         ) {
             Hessian2Output hessian2Output = new Hessian2Output(baos);
             hessian2Output.writeObject(object);
-            hessian2Output.flush();
+            hessian2Output.flush(); // 将缓冲的数据写入到输出流中
             byte[] result = baos.toByteArray();
             if(log.isDebugEnabled()){
                 log.debug("对象【{}】已经完成了序列化操作，序列化后的字节数为【{}】",object,result.length);
